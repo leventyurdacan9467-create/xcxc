@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion';
-import { X, CheckCircle2, Circle, AlertCircle, ShoppingBag, ChevronRight } from 'lucide-react';
+import { X, CheckCircle2, AlertCircle, ShoppingBag, ChevronRight } from 'lucide-react';
 import type { Category } from '@/types';
 import { useLang } from '@/i18n';
 import { generateEquipment, Language } from '../utils/expeditionLogic';
 
 interface BagScreenProps {
   category: Category;
-  date?: string; // Tarih bilgisi
+  date?: string;
   statuses: Record<string, 'pending' | 'ready' | 'missing'>;
   onClose: () => void;
   onToggleStatus: (id: string, status: 'pending' | 'ready' | 'missing') => void;
@@ -16,38 +16,42 @@ interface BagScreenProps {
 export function BagScreen({
   category,
   date = '',
-  statuses,
+  statuses = {},
   onClose,
   onToggleStatus,
   onItemClick,
 }: BagScreenProps) {
   const { lang } = useLang();
-  const currentLang = lang as Language;
+  const currentLang = (lang as Language) || 'tr';
 
-  // 1. GÜN HESAPLAMASI (Ana ekranla aynı mantık)
+  // Güvenli gün hesaplaması
   let tripDays = 1;
-  if (date && date.includes(' - ')) {
-    const [startStr, endStr] = date.split(' - ');
-    const start = new Date(startStr);
-    const end = new Date(endStr);
-    if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-      const diffTime = Math.abs(end.getTime() - start.getTime());
-      tripDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  try {
+    if (date && date.includes(' - ')) {
+      const [startStr, endStr] = date.split(' - ');
+      const start = new Date(startStr);
+      const end = new Date(endStr);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        tripDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      }
     }
+  } catch (e) {
+    tripDays = 1;
   }
 
-  // 2. AKILLI MOTORU ÇALIŞTIR
   const isSummit = category === 'mountaineering';
-  const dynamicGroups = generateEquipment({ days: tripDays, isSummit }, currentLang);
   
-  // Tüm kategorilerdeki ürünleri tek bir düz listeye çevirip, ait oldukları grubu da ekliyoruz
+  // Güvenli veri üretimi (Hata almayı önler)
+  const dynamicGroups = generateEquipment({ days: tripDays, isSummit }, currentLang) || {};
+  
   const allItems = Object.entries(dynamicGroups).flatMap(([group, items]) => 
-    items.map(item => ({ ...item, group }))
+    (items || []).map(item => ({ ...item, group }))
   );
 
-  // 3. HAZIR VE EKSİK LİSTELERİNİ AYIR
-  const readyItems = allItems.filter(item => statuses[item.id] === 'ready');
-  const missingItems = allItems.filter(item => statuses[item.id] !== 'ready');
+  const safeStatuses = statuses || {};
+  const readyItems = allItems.filter(item => safeStatuses[item.id] === 'ready');
+  const missingItems = allItems.filter(item => safeStatuses[item.id] !== 'ready');
 
   return (
     <motion.div
@@ -55,7 +59,7 @@ export function BagScreen({
       animate={{ y: 0 }}
       exit={{ y: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="fixed inset-0 z-50 flex flex-col bg-forest-950"
+      className="fixed inset-0 z-50 flex flex-col bg-forest-950 text-white"
     >
       {/* Üst Kısım / Header */}
       <div className="flex items-center justify-between p-5 border-b border-white/10 bg-forest-950/90 backdrop-blur-md z-10">
@@ -64,9 +68,9 @@ export function BagScreen({
             <ShoppingBag className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">{lang === 'tr' ? 'Çantan' : 'Your Bag'}</h2>
+            <h2 className="text-lg font-bold">{currentLang === 'tr' ? 'Çantan' : 'Your Bag'}</h2>
             <p className="text-xs text-rock-400">
-              {readyItems.length} {lang === 'tr' ? 'hazır' : 'ready'} · {missingItems.length} {lang === 'tr' ? 'eksik' : 'missing'}
+              {readyItems.length} {currentLang === 'tr' ? 'hazır' : 'ready'} · {missingItems.length} {currentLang === 'tr' ? 'eksik' : 'missing'}
             </p>
           </div>
         </div>
@@ -85,7 +89,7 @@ export function BagScreen({
             <div className="flex items-center gap-2 text-success-500">
               <CheckCircle2 className="h-4 w-4" />
               <h3 className="text-xs font-bold uppercase tracking-wider">
-                {lang === 'tr' ? 'Hazır Olanlar' : 'Ready'}
+                {currentLang === 'tr' ? 'Hazır Olanlar' : 'Ready'}
               </h3>
             </div>
             <span className="text-xs font-bold bg-success-500/20 text-success-400 px-2 py-1 rounded-full">
@@ -96,7 +100,7 @@ export function BagScreen({
           {readyItems.length === 0 ? (
             <div className="p-8 rounded-2xl border border-dashed border-white/10 flex items-center justify-center text-center">
               <p className="text-sm text-rock-500">
-                {lang === 'tr' ? 'Henüz hiçbir ekipman hazır değil. Kartlara tek tıkla işaretle.' : 'No items ready yet. Tap a card to mark as ready.'}
+                {currentLang === 'tr' ? 'Henüz hiçbir ekipman hazır değil. Kartlara tek tıkla işaretle.' : 'No items ready yet. Tap a card to mark as ready.'}
               </p>
             </div>
           ) : (
@@ -106,7 +110,7 @@ export function BagScreen({
                   key={item.id} 
                   className="flex items-center p-3 rounded-xl bg-success-500/10 border border-success-500/20"
                 >
-                  <div className="flex-1" onClick={() => onToggleStatus(item.id, 'pending')}>
+                  <div className="flex-1 cursor-pointer" onClick={() => onToggleStatus(item.id, 'pending')}>
                     <p className="text-[10px] text-success-400/80 mb-0.5 uppercase tracking-wider">{item.group}</p>
                     <p className="text-sm font-medium text-success-400 line-through">{item.name}</p>
                   </div>
@@ -125,7 +129,7 @@ export function BagScreen({
             <div className="flex items-center gap-2 text-ember-500">
               <AlertCircle className="h-4 w-4" />
               <h3 className="text-xs font-bold uppercase tracking-wider">
-                {lang === 'tr' ? 'Eksikler' : 'Missing'}
+                {currentLang === 'tr' ? 'Eksikler' : 'Missing'}
               </h3>
             </div>
             <span className="text-xs font-bold bg-ember-500/20 text-ember-400 px-2 py-1 rounded-full">
@@ -139,14 +143,14 @@ export function BagScreen({
                 key={item.id} 
                 className="flex items-center p-3 rounded-xl bg-forest-900/30 border border-white/5 hover:bg-forest-900/50"
               >
-                <div className="flex-1" onClick={() => onToggleStatus(item.id, 'ready')}>
+                <div className="flex-1 cursor-pointer" onClick={() => onToggleStatus(item.id, 'ready')}>
                   <p className="text-[10px] text-rock-500 mb-0.5 uppercase tracking-wider">{item.group}</p>
                   <p className="text-sm font-medium text-white">{item.name}</p>
                   {item.note && <p className="text-[10px] text-ember-400/80 mt-1">{item.note}</p>}
                 </div>
                 <button onClick={() => onItemClick(item.id)} className="p-2 text-rock-400 hover:text-white ml-2 flex items-center gap-2">
                   <span className="text-[10px] uppercase tracking-wider text-rock-500">
-                    {lang === 'tr' ? 'Detay' : 'Detail'}
+                    {currentLang === 'tr' ? 'Detay' : 'Detail'}
                   </span>
                   <ChevronRight className="h-4 w-4" />
                 </button>
