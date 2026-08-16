@@ -27,7 +27,7 @@ export function LocationInput({ onComplete }: LocationInputProps) {
     debounceRef.current = setTimeout(async () => {
       try {
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&countrycodes=tr`
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&limit=5`
         );
         const data = await response.json();
         setSuggestions(data || []);
