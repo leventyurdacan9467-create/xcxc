@@ -1,20 +1,9 @@
 import React, { useState } from 'react';
 
-interface LocationResult {
-  display_name: string;
-  lat: string;
-  lon: string;
-}
+export default function LocationInput() {
+  const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<any[]>([]);
 
-interface LocationInputProps {
-  onLocationSelect?: (location: { name: string; lat: string; lon: string }) => void;
-}
-
-export default function LocationInput({ onLocationSelect }: LocationInputProps) {
-  const [query, setQuery] = useState<string>('');
-  const [suggestions, setSuggestions] = useState<LocationResult[]>([]);
-
-  // Kullanıcı yazdıkça Nominatim'den sonuç çeken fonksiyon
   const handleSearch = async (value: string) => {
     setQuery(value);
 
@@ -32,28 +21,15 @@ export default function LocationInput({ onLocationSelect }: LocationInputProps) 
           }
         }
       );
-      const data: LocationResult[] = await response.json();
+      const data = await response.json();
       setSuggestions(data || []);
     } catch (error) {
       console.error("Arama hatası:", error);
     }
   };
 
-  // Bir konum seçildiğinde
-  const handleSelect = (item: LocationResult) => {
-    setQuery(item.display_name);
-    setSuggestions([]);
-    if (onLocationSelect) {
-      onLocationSelect({
-        name: item.display_name,
-        lat: item.lat,
-        lon: item.lon
-      });
-    }
-  };
-
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <input
         type="text"
         value={query}
@@ -62,13 +38,15 @@ export default function LocationInput({ onLocationSelect }: LocationInputProps) 
         className="w-full px-4 py-2 border rounded-lg bg-transparent text-white"
       />
       
-      {/* Öneriler Listesi */}
       {suggestions.length > 0 && (
         <ul className="absolute z-50 w-full mt-1 bg-zinc-900 border border-zinc-700 rounded-lg max-h-60 overflow-y-auto shadow-lg">
           {suggestions.map((item, index) => (
             <li
               key={index}
-              onClick={() => handleSelect(item)}
+              onClick={() => {
+                setQuery(item.display_name);
+                setSuggestions([]);
+              }}
               className="px-4 py-2 hover:bg-zinc-800 cursor-pointer text-sm text-gray-200 border-b border-zinc-800 last:border-none"
             >
               {item.display_name}
