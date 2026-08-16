@@ -198,3 +198,13 @@ function App() {
                   [selectedItemId]: 'ready',
                 }));
               }
+              setSelectedItemId(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+export default App;
