@@ -5,7 +5,7 @@ interface LocationInputProps {
 }
 
 export default function LocationInput({ onLocationSelect }: LocationInputProps) {
-  const [query, setQuery] = useState<string>('');
+  const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<any[]>([]);
 
   const handleSearch = async (value: string) => {
@@ -17,7 +17,6 @@ export default function LocationInput({ onLocationSelect }: LocationInputProps) 
     }
 
     try {
-      // Nominatim üzerinden dünya çapındaki dağlar, zirveler ve yerler dahil arama
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}`,
         {
