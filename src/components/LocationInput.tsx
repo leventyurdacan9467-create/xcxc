@@ -1,4 +1,6 @@
 import { useState, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { MapPin } from 'lucide-react';
 
 interface LocationInputProps {
   onComplete: (location: string, date: string, coords?: { lat: number; lng: number }) => void;
@@ -6,7 +8,8 @@ interface LocationInputProps {
 
 export function LocationInput({ onComplete }: LocationInputProps) {
   const [query, setQuery] = useState('');
-  const [date, setDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number } | undefined>();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -42,55 +45,89 @@ export function LocationInput({ onComplete }: LocationInputProps) {
   };
 
   const handleSubmit = () => {
-    if (!query || !date) return;
-    onComplete(query, date, selectedCoords);
+    if (!query || !startDate || !endDate) return;
+    const dateRange = `${startDate} - ${endDate}`;
+    onComplete(query, dateRange, selectedCoords);
   };
 
+  const isValid = query && startDate && endDate;
+
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <div className="relative w-full">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => handleSearch(e.target.value)}
-          placeholder="Lokasyon ara (Örn: Aladağlar, Kaçkar)..."
-          className="w-full px-4 py-2 border rounded-lg bg-transparent text-white"
-        />
-        {suggestions.length > 0 && (
-          <ul className="absolute z-50 w-full mt-1 bg-zinc-900 border border-zinc-700 rounded-lg max-h-60 overflow-y-auto shadow-lg">
-            {suggestions.map((item: any, index: number) => (
-              <li
-                key={index}
-                onClick={() => handleSelectSuggestion(item)}
-                className="px-4 py-2 hover:bg-zinc-800 cursor-pointer text-sm text-gray-200 border-b border-zinc-800 last:border-none"
-              >
-                {item.display_name}
-              </li>
-            ))}
-          </ul>
-        )}
+    <motion.div
+      key="location"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.4 }}
+      className="min-h-screen flex flex-col justify-center px-6"
+    >
+      <div className="text-center space-y-3 mb-10">
+        <p className="text-ember-500 text-sm font-medium tracking-widest uppercase">
+          Nereye gidiyorsun?
+        </p>
+        <h1 className="text-3xl font-bold text-white leading-tight">
+          Konum ve tarihini
+          <br />
+          <span className="text-gradient-ember">belirle</span>
+        </h1>
       </div>
 
-      <input
-        type="date"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
-        className="w-full px-4 py-2 border rounded-lg bg-transparent text-white"
-      />
+      <div className="w-full max-w-sm mx-auto flex flex-col gap-4">
+        <div className="relative w-full">
+          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-rock-400" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Lokasyon ara (Örn: Aladağlar, Kaçkar)..."
+            className="w-full pl-11 pr-4 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm text-white placeholder:text-rock-400 focus:outline-none focus:border-ember-500/50"
+          />
+          {suggestions.length > 0 && (
+            <ul className="absolute z-50 w-full mt-1 bg-forest-950 border border-white/10 rounded-2xl max-h-60 overflow-y-auto shadow-lg">
+              {suggestions.map((item: any, index: number) => (
+                <li
+                  key={index}
+                  onClick={() => handleSelectSuggestion(item)}
+                  className="px-4 py-3 hover:bg-white/5 cursor-pointer text-sm text-rock-200 border-b border-white/5 last:border-none"
+                >
+                  {item.display_name}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
-      <button
-        onClick={handleSubmit}
-        disabled={!query || !date}
-        className="w-full px-4 py-2 rounded-lg bg-emerald-600 text-white disabled:opacity-40"
-      >
-        Devam Et
-      </button>
-    </div>
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className="text-xs text-rock-400 mb-1 block pl-1">Başlangıç</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full px-4 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm text-white focus:outline-none focus:border-ember-500/50"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="text-xs text-rock-400 mb-1 block pl-1">Bitiş</label>
+            <input
+              type="date"
+              value={endDate}
+              min={startDate || undefined}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full px-4 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm text-white focus:outline-none focus:border-ember-500/50"
+            />
+          </div>
+        </div>
+
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={handleSubmit}
+          disabled={!isValid}
+          className="w-full mt-4 px-4 py-3 rounded-2xl bg-ember-500 text-white font-semibold disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
+        >
+          Devam Et
+        </motion.button>
+      </div>
+    </motion.div>
   );
 }
-
-
-
-
-
-
