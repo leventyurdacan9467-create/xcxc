@@ -6,13 +6,57 @@ interface LocationInputProps {
   onComplete: (location: string, date: string, coords?: { lat: number; lng: number }) => void;
 }
 
+const TYPE_LABELS: Record<string, string> = {
+  peak: 'Zirve',
+  volcano: 'Yanardağ',
+  saddle: 'Geçit/Sırt',
+  ridge: 'Sırt Hattı',
+  camp_site: 'Kamp Alanı',
+  picnic_site: 'Piknik Alanı',
+  alpine_hut: 'Dağ Evi',
+  wilderness_hut: 'Barınak',
+  wood: 'Orman',
+  forest: 'Orman',
+  nature_reserve: 'Doğa Koruma Alanı',
+  national_park: 'Milli Park',
+  hiking: 'Yürüyüş Rotası',
+};
+
 export function LocationInput({ onComplete }: LocationInputProps) {
   const [query, setQuery] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number } | undefined>();
+  const [searching, setSearching] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const buildOverpassQuery = (name: string) => {
+    const safe = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return `
+[out:json][timeout:25];
+(
+  node["natural"="peak"]["name"~"${safe}",i];
+  node["natural"="volcano"]["name"~"${safe}",i];
+  node["natural"="saddle"]["name"~"${safe}",i];
+  node["natural"="ridge"]["name"~"${safe}",i];
+  node["tourism"="camp_site"]["name"~"${safe}",i];
+  way["tourism"="camp_site"]["name"~"${safe}",i];
+  node["tourism"="picnic_site"]["name"~"${safe}",i];
+  node["tourism"="alpine_hut"]["name"~"${safe}",i];
+  node["tourism"="wilderness_hut"]["name"~"${safe}",i];
+  way["natural"="wood"]["name"~"${safe}",i];
+  way["landuse"="forest"]["name"~"${safe}",i];
+  way["leisure"="nature_reserve"]["name"~"${safe}",i];
+  relation["leisure"="nature_reserve"]["name"~"${safe}",i];
+  way["boundary"="national_park"]["name"~"${safe}",i];
+  relation["boundary"="national_park"]["name"~"${safe}",i];
+  relation["route"="hiking"]["name"~"${safe}",i];
+  way["route"="hiking"]["name"~"${safe}",i];
+);
+out center 25;
+`.trim();
+  };
 
   const handleSearch = (value: string) => {
     setQuery(value);
@@ -25,38 +69,62 @@ export function LocationInput({ onComplete }: LocationInputProps) {
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
+      setSearching(true);
       try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&limit=20&addressdetails=1&extratags=1`
-        );
-        const data: any[] = await response.json();
+        const overpassQuery = buildOverpassQuery(value.trim());
+        const response = await fetch('https://overpass-api.de/api/interpreter', {
+          method: 'POST',
+          body: `data=${encodeURIComponent(overpassQuery)}`,
+        });
 
-        // Sadece dağ zirvesi, kamp alanı, dağ evi veya hiking rotası ile ilgili sonuçları göster
-        const ALLOWED = new Set([
-          'peak',        // dağ zirvesi
-          'volcano',     // yanardağ zirvesi
-          'saddle',      // dağ geçidi/sırtı
-          'ridge',       // sırt hattı
-          'camp_site',   // kamp alanı
-          'alpine_hut',  // dağ evi/barınak
-          'wilderness_hut',
-          'hiking',      // hiking rotası
-          'path',        // yürüyüş yolu
-        ]);
+        if (!response.ok) throw new Error(`Overpass error: ${response.status}`);
+        const data = await response.json();
 
-        const filtered = (data || []).filter((item) => ALLOWED.has(item.type));
+        const seen = new Set<string>();
+        const results = (data.elements || [])
+          .map((el: any) => {
+            const lat = el.lat ?? el.center?.lat;
+            const lon = el.lon ?? el.center?.lon;
+            const name = el.tags?.name || 'İsimsiz';
+            const typeKey =
+              el.tags?.natural ||
+              el.tags?.tourism ||
+              el.tags?.leisure ||
+              el.tags?.boundary ||
+              el.tags?.landuse ||
+              el.tags?.route ||
+              '';
+            const typeLabel = TYPE_LABELS[typeKey] || typeKey;
+            const elevation = el.tags?.ele ? ` · ${el.tags.ele}m` : '';
 
-        setSuggestions(filtered);
+            return {
+              display_name: name,
+              typeLabel: `${typeLabel}${elevation}`,
+              lat,
+              lon,
+              dedupeKey: `${name}-${typeKey}`,
+            };
+          })
+          .filter((r: any) => r.lat && r.lon)
+          .filter((r: any) => {
+            if (seen.has(r.dedupeKey)) return false;
+            seen.add(r.dedupeKey);
+            return true;
+          });
+
+        setSuggestions(results);
       } catch (error) {
-        console.error('Arama hatası:', error);
+        console.error('Overpass arama hatası:', error);
         setSuggestions([]);
+      } finally {
+        setSearching(false);
       }
-    }, 400);
+    }, 500);
   };
 
   const handleSelectSuggestion = (item: any) => {
     setQuery(item.display_name);
-    setSelectedCoords({ lat: parseFloat(item.lat), lng: parseFloat(item.lon) });
+    setSelectedCoords({ lat: item.lat, lng: item.lon });
     setSuggestions([]);
   };
 
@@ -98,6 +166,9 @@ export function LocationInput({ onComplete }: LocationInputProps) {
             placeholder="Lokasyon ara (Örn: Aladağlar, Everest)..."
             className="w-full pl-11 pr-4 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm text-white placeholder:text-rock-400 focus:outline-none focus:border-ember-500/50"
           />
+          {searching && (
+            <p className="text-xs text-rock-400 mt-1 pl-1">Aranıyor...</p>
+          )}
           {suggestions.length > 0 && (
             <ul className="absolute z-50 w-full mt-1 bg-forest-950 border border-white/10 rounded-2xl max-h-60 overflow-y-auto shadow-lg">
               {suggestions.map((item: any, index: number) => (
@@ -107,7 +178,7 @@ export function LocationInput({ onComplete }: LocationInputProps) {
                   className="px-4 py-3 hover:bg-white/5 cursor-pointer text-sm text-rock-200 border-b border-white/5 last:border-none"
                 >
                   <span>{item.display_name}</span>
-                  <span className="text-xs text-rock-400 block">{item.type || item.class}</span>
+                  <span className="text-xs text-ember-500 block">{item.typeLabel}</span>
                 </li>
               ))}
             </ul>
