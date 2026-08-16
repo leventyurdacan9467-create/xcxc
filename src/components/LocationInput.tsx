@@ -63,3 +63,34 @@ export function LocationInput({ onComplete }: LocationInputProps) {
                 key={index}
                 onClick={() => handleSelectSuggestion(item)}
                 className="px-4 py-2 hover:bg-zinc-800 cursor-pointer text-sm text-gray-200 border-b border-zinc-800 last:border-none"
+              >
+                {item.display_name}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <input
+        type="date"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+        className="w-full px-4 py-2 border rounded-lg bg-transparent text-white"
+      />
+
+      <button
+        onClick={handleSubmit}
+        disabled={!query || !date}
+        className="w-full px-4 py-2 rounded-lg bg-emerald-600 text-white disabled:opacity-40"
+      >
+        Devam Et
+      </button>
+    </div>
+  );
+}
+
+
+
+
+
+
