@@ -30,7 +30,7 @@ export function AnalysisLoading({
 }: AnalysisLoadingProps) {
   const { t, lang } = useLang();
   const [currentStep, setCurrentStep] = useState(0);
-  const { fetchWeather } = useOpenMeteo();
+  const { fetchHistoricalAverage } = useOpenMeteo();
   const completedRef = useRef(false);
 
   const stepIcons = [Thermometer, Wind, Droplets, Eye, CheckCircle2];
@@ -40,12 +40,17 @@ export function AnalysisLoading({
     const stepDuration = 700;
 
     const run = async () => {
-      let weatherData: Awaited<ReturnType<typeof fetchWeather>> = null;
+      let historicalData: Awaited<ReturnType<typeof fetchHistoricalAverage>> = null;
 
       if (coords) {
-        console.log('[AnalysisLoading] Coords received:', coords, '— fetching weather...');
-        weatherData = await fetchWeather(coords.lat, coords.lng);
-        console.log('[AnalysisLoading] Weather fetch result:', weatherData);
+        const [startStr, endStr] = date.split(' - ');
+        if (startStr && endStr) {
+          console.log('[AnalysisLoading] Coords received:', coords, '— fetching historical average...');
+          historicalData = await fetchHistoricalAverage(coords.lat, coords.lng, startStr, endStr);
+          console.log('[AnalysisLoading] Historical average result:', historicalData);
+        } else {
+          console.warn('[AnalysisLoading] Date range could not be parsed:', date);
+        }
       } else {
         console.warn('[AnalysisLoading] No coords provided — using fallback static data');
       }
@@ -61,44 +66,43 @@ export function AnalysisLoading({
               console.log('[AnalysisLoading] Steps complete — building analysis...');
               const baseAnalysis = WEATHER_ANALYSES[category];
 
-              if (weatherData) {
-                console.log('[AnalysisLoading] Using real weather data');
-                const w = weatherData.current;
-                const weatherDesc = getWeatherDescription(w.weatherCode, lang);
-                const tempStr = `${w.temperature.toFixed(1)}°C`;
-                const windStr = `${w.windSpeed.toFixed(1)} km/s`;
-                const precipStr = `${w.precipitation.toFixed(1)} mm`;
+              if (historicalData) {
+                console.log('[AnalysisLoading] Using historical average data');
+                const weatherDesc = getWeatherDescription(historicalData.mostCommonWeatherCode, lang);
+                const tempMaxStr = `${historicalData.avgTempMax.toFixed(1)}°C`;
+                const tempMinStr = `${historicalData.avgTempMin.toFixed(1)}°C`;
+                const precipStr = `${historicalData.avgPrecipitation.toFixed(1)} mm`;
+                const yearsStr = `${Math.min(...historicalData.yearsUsed)}-${Math.max(...historicalData.yearsUsed)}`;
 
                 const details: Record<string, string[]> = {
                   tr: [
-                    `Anlık sıcaklık: ${tempStr}`,
-                    `Rüzgar hızı: ${windStr} (${w.windDirection}°)`,
-                    `Yağış: ${precipStr}`,
-                    `Durum: ${weatherDesc}`,
+                    `Ortalama gündüz: ${tempMaxStr} / gece: ${tempMinStr}`,
+                    `Ortalama günlük yağış: ${precipStr}`,
+                    `Genel durum: ${weatherDesc}`,
+                    `${yearsStr} yılları verisine dayanıyor`,
                   ],
                   en: [
-                    `Current temperature: ${tempStr}`,
-                    `Wind speed: ${windStr} (${w.windDirection}°)`,
-                    `Precipitation: ${precipStr}`,
-                    `Condition: ${weatherDesc}`,
+                    `Average day: ${tempMaxStr} / night: ${tempMinStr}`,
+                    `Average daily precipitation: ${precipStr}`,
+                    `Overall condition: ${weatherDesc}`,
+                    `Based on ${yearsStr} data`,
                   ],
                   fr: [
-                    `Température actuelle: ${tempStr}`,
-                    `Vitesse du vent: ${windStr} (${w.windDirection}°)`,
-                    `Précipitations: ${precipStr}`,
-                    `Condition: ${weatherDesc}`,
+                    `Moyenne jour: ${tempMaxStr} / nuit: ${tempMinStr}`,
+                    `Précipitations moyennes: ${precipStr}`,
+                    `Condition générale: ${weatherDesc}`,
+                    `Basé sur les données ${yearsStr}`,
                   ],
                   es: [
-                    `Temperatura actual: ${tempStr}`,
-                    `Velocidad del viento: ${windStr} (${w.windDirection}°)`,
-                    `Precipitación: ${precipStr}`,
-                    `Condición: ${weatherDesc}`,
+                    `Promedio día: ${tempMaxStr} / noche: ${tempMinStr}`,
+                    `Precipitación diaria promedio: ${precipStr}`,
+                    `Condición general: ${weatherDesc}`,
+                    `Basado en datos de ${yearsStr}`,
                   ],
                 };
 
-                const isCold = w.temperature < 0;
-                const isWindy = w.windSpeed > 40;
-                const isWet = w.precipitation > 0.5;
+                const isCold = historicalData.avgTempMin < 0;
+                const isWet = historicalData.avgPrecipitation > 3;
 
                 let condition = baseAnalysis.condition;
                 if (isCold) condition = 'high-altitude';
@@ -155,17 +159,16 @@ export function AnalysisLoading({
 
                 const analysis: WeatherAnalysis = {
                   condition,
-                  temperature: tempStr,
+                  temperature: `${tempMinStr} / ${tempMaxStr}`,
                   summary: summary as any,
                   details: details as any,
                   recommendation: recommendation as any,
                   icon,
-                  currentWeather: w,
                 };
 
                 setTimeout(() => onComplete(analysis), 600);
               } else {
-                console.log('[AnalysisLoading] No weather data — using fallback static analysis');
+                console.log('[AnalysisLoading] No historical data — using fallback static analysis');
                 setTimeout(() => onComplete(baseAnalysis), 600);
               }
             }
@@ -191,7 +194,7 @@ export function AnalysisLoading({
       cancelled = true;
       clearTimeout(safety);
     };
-  }, [category, coords, fetchWeather, onComplete, t.steps.length, lang]);
+  }, [category, coords, date, fetchHistoricalAverage, onComplete, t.steps.length, lang]);
 
   const analysis = WEATHER_ANALYSES[category];
   const WeatherIcon = analysis.icon;
