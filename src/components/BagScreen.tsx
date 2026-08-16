@@ -24,6 +24,7 @@ export function BagScreen({
   const { lang } = useLang();
   const currentLang = (lang as Language) || 'tr';
 
+  // 1. Ana ekrandakinin birebir aynısı gün hesaplama algoritması
   let tripDays = 1;
   try {
     if (date && date.includes(' - ')) {
@@ -40,8 +41,8 @@ export function BagScreen({
   }
 
   const isSummit = category === 'mountaineering';
-  
-  // Güvenli motor çağrısı
+
+  // 2. Ana ekranla birebir aynı motor çağrısı (ID'lerin %100 uyuşmasını sağlar)
   let dynamicGroups: Record<string, { id: string; name: string; note?: string }[]> = {};
   try {
     dynamicGroups = generateEquipment({ days: tripDays, isSummit }, currentLang) || {};
@@ -49,6 +50,7 @@ export function BagScreen({
     dynamicGroups = {};
   }
 
+  // Tüm kategorilerdeki ürünleri tek bir listeye düzleştiriyoruz
   const allItems = Object.entries(dynamicGroups).flatMap(([group, items]) => 
     (items || []).map(item => ({ ...item, group }))
   );
@@ -65,6 +67,7 @@ export function BagScreen({
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="fixed inset-0 z-50 flex flex-col bg-forest-950 text-white"
     >
+      {/* Üst Header */}
       <div className="flex items-center justify-between p-5 border-b border-white/10 bg-forest-950/90 backdrop-blur-md z-10">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ember-500/20 text-ember-500">
@@ -86,6 +89,7 @@ export function BagScreen({
       </div>
 
       <div className="flex-1 overflow-y-auto p-5 space-y-8 pb-20">
+        {/* HAZIR OLANLAR */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2 text-success-500">
@@ -102,7 +106,7 @@ export function BagScreen({
           {readyItems.length === 0 ? (
             <div className="p-8 rounded-2xl border border-dashed border-white/10 flex items-center justify-center text-center">
               <p className="text-sm text-rock-500">
-                {currentLang === 'tr' ? 'Henüz hiçbir ekipman hazır değil.' : 'No items ready yet.'}
+                {currentLang === 'tr' ? 'Henüz hiçbir ekipman hazır değil. Kartlara tıkla.' : 'No items ready yet.'}
               </p>
             </div>
           ) : (
@@ -125,6 +129,7 @@ export function BagScreen({
           )}
         </section>
 
+        {/* EKSİKLER */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2 text-ember-500">
