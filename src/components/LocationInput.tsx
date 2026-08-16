@@ -40,7 +40,7 @@ export default function LocationInput() {
       
       {suggestions.length > 0 && (
         <ul className="absolute z-50 w-full mt-1 bg-zinc-900 border border-zinc-700 rounded-lg max-h-60 overflow-y-auto shadow-lg">
-          {suggestions.map((item, index) => (
+          {suggestions.map((item: any, index: number) => (
             <li
               key={index}
               onClick={() => {
