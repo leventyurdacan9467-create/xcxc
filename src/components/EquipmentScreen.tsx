@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
-import { ArrowLeft, Thermometer, Wind, Eye, Droplets, Calendar, CheckCircle2, Circle } from 'lucide-react';
+import { ArrowLeft, Thermometer, Wind, Eye, Droplets, CheckCircle2, Circle } from 'lucide-react';
 import type { Category, WeatherAnalysis } from '@/types';
 import { CATEGORY_META } from '@/data';
-import { useLang, type Lang } from '@/i18n';
+import { useLang } from '@/i18n';
 import { FloatingBagButton } from './FloatingBagButton';
-import { generateEquipment, generateDailyPlan, Language } from '../utils/expeditionLogic';
+import { generateEquipment, Language } from '../utils/expeditionLogic';
 
 interface EquipmentScreenProps {
   category: Category;
@@ -31,34 +31,42 @@ export function EquipmentScreen({
 }: EquipmentScreenProps) {
   const { t, lang } = useLang();
   const meta = CATEGORY_META[category];
-  const currentLang = lang as Language;
+  const currentLang = (lang as Language) || 'tr';
 
   const categoryLabels: Record<Category, string> = {
     mountaineering: t.mountaineering,
     camping: t.camping,
   };
 
-  // 1. TARİHTEN GÜN SAYISINI HESAPLA (Örn: "2026-08-20 - 2026-08-25" -> 6 Gün)
+  // Güvenli gün hesaplaması
   let tripDays = 1;
-  if (date && date.includes(' - ')) {
-    const [startStr, endStr] = date.split(' - ');
-    const start = new Date(startStr);
-    const end = new Date(endStr);
-    if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-      const diffTime = Math.abs(end.getTime() - start.getTime());
-      tripDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  try {
+    if (date && date.includes(' - ')) {
+      const [startStr, endStr] = date.split(' - ');
+      const start = new Date(startStr);
+      const end = new Date(endStr);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        tripDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      }
     }
+  } catch (e) {
+    tripDays = 1;
   }
 
-  // 2. AKILLI MOTORU ÇALIŞTIR (Zirve mi? Kış mı? Kaç Gün?)
   const isSummit = category === 'mountaineering';
   
-  const dynamicGroups = generateEquipment({ days: tripDays, isSummit }, currentLang);
-  const dailyPlan = generateDailyPlan(tripDays, isSummit, currentLang);
+  // Güvenli motor çağrısı
+  let dynamicGroups: Record<string, { id: string; name: string; note?: string }[]> = {};
+  try {
+    dynamicGroups = generateEquipment({ days: tripDays, isSummit }, currentLang) || {};
+  } catch (e) {
+    dynamicGroups = {};
+  }
 
-  // 3. İSTATİSTİKLER (İlerleme çubuğu için)
   const allDynamicItems = Object.values(dynamicGroups).flat();
-  const readyCount = allDynamicItems.filter((i) => statuses[i.id] === 'ready').length;
+  const safeStatuses = statuses || {};
+  const readyCount = allDynamicItems.filter((i) => safeStatuses[i.id] === 'ready').length;
 
   return (
     <motion.div
@@ -67,7 +75,7 @@ export function EquipmentScreen({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, x: -30 }}
       transition={{ duration: 0.4 }}
-      className="min-h-screen pb-28"
+      className="min-h-screen pb-28 text-white"
     >
       {/* Hero header */}
       <div className="relative h-56 overflow-hidden">
@@ -89,7 +97,7 @@ export function EquipmentScreen({
           <div className="flex items-center gap-2 mb-1">
             <meta.icon className="h-4 w-4 text-ember-400" />
             <span className="text-xs uppercase tracking-wider text-rock-200 font-medium">
-              {categoryLabels[category]} · {tripDays} {lang === 'tr' ? 'Gün' : 'Days'}
+              {categoryLabels[category]} · {tripDays} {currentLang === 'tr' ? 'Gün' : 'Days'}
             </span>
           </div>
           <h1 className="text-2xl font-bold text-white">{location}</h1>
@@ -126,7 +134,7 @@ export function EquipmentScreen({
                   {analysis.currentWeather.temperature.toFixed(1)}°C
                 </span>
                 <span className="text-[10px] text-rock-400">
-                  {lang === 'tr' ? 'Sıcaklık' : 'Temp'}
+                  {currentLang === 'tr' ? 'Sıcaklık' : 'Temp'}
                 </span>
               </div>
               <div className="flex flex-col items-center rounded-lg bg-forest-900/50 p-2.5">
@@ -178,27 +186,7 @@ export function EquipmentScreen({
         </div>
       </div>
 
-      {/* YENİ: GÜN BAZLI PLAN BÖLÜMÜ */}
-      <div className="px-5 mt-8">
-        <div className="flex items-center gap-2 mb-4">
-          <Calendar className="h-5 w-5 text-ember-500" />
-          <h2 className="text-lg font-bold text-white uppercase tracking-wider">
-            {lang === 'tr' ? 'Etkinlik Planı' : 'Itinerary'}
-          </h2>
-        </div>
-        <div className="space-y-3">
-          {dailyPlan.map((day) => (
-            <div key={day.day} className="bg-forest-900/40 border border-white/5 p-4 rounded-xl">
-              <h3 className="font-semibold text-ember-400 text-sm mb-1">
-                {lang === 'tr' ? 'Gün' : 'Day'} {day.day}: {day.title}
-              </h3>
-              <p className="text-xs text-rock-300 leading-relaxed">{day.desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* YENİ: AKILLI EKİPMAN LİSTESİ */}
+      {/* AKILLI EKİPMAN LİSTESİ */}
       <div className="mt-8 space-y-6">
         {Object.entries(dynamicGroups).map(([groupName, groupItems]) => (
           <div key={groupName}>
@@ -208,10 +196,9 @@ export function EquipmentScreen({
               </h2>
             </div>
             
-            {/* Özel Dikey Liste (Notları göstermek ve tıklamaları yakalamak için) */}
             <div className="px-5 space-y-2 pb-2">
               {groupItems.map((item) => {
-                const isReady = statuses[item.id] === 'ready';
+                const isReady = safeStatuses[item.id] === 'ready';
                 return (
                   <motion.div
                     whileTap={{ scale: 0.98 }}
@@ -247,6 +234,7 @@ export function EquipmentScreen({
         ))}
       </div>
 
+      {/* Çanta Butonu */}
       <FloatingBagButton count={readyCount} onClick={onOpenBag} />
     </motion.div>
   );
