@@ -27,10 +27,26 @@ export function LocationInput({ onComplete }: LocationInputProps) {
     debounceRef.current = setTimeout(async () => {
       try {
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&limit=8&addressdetails=1&extratags=1`
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&limit=20&addressdetails=1&extratags=1`
         );
-        const data = await response.json();
-        setSuggestions(data || []);
+        const data: any[] = await response.json();
+
+        // Sadece dağ zirvesi, kamp alanı, dağ evi veya hiking rotası ile ilgili sonuçları göster
+        const ALLOWED = new Set([
+          'peak',        // dağ zirvesi
+          'volcano',     // yanardağ zirvesi
+          'saddle',      // dağ geçidi/sırtı
+          'ridge',       // sırt hattı
+          'camp_site',   // kamp alanı
+          'alpine_hut',  // dağ evi/barınak
+          'wilderness_hut',
+          'hiking',      // hiking rotası
+          'path',        // yürüyüş yolu
+        ]);
+
+        const filtered = (data || []).filter((item) => ALLOWED.has(item.type));
+
+        setSuggestions(filtered);
       } catch (error) {
         console.error('Arama hatası:', error);
         setSuggestions([]);
