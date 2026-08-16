@@ -1,58 +1,35 @@
 import React, { useState } from 'react';
 
-export default function LocationInput() {
-  const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+interface LocationInputProps {
+  onLocationSelect?: (location: { name: string; lat: string; lon: string }) => void;
+}
 
-  // Overpass API ile dünya çapındaki zirveleri ve dağları arama fonksiyonu
+export default function LocationInput({ onLocationSelect }: LocationInputProps) {
+  const [query, setQuery] = useState<string>('');
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+
   const handleSearch = async (value: string) => {
     setQuery(value);
 
-    if (!value || value.trim().length < 2) {
+    if (!value || value.trim().length < 3) {
       setSuggestions([]);
       return;
     }
 
-    setLoading(true);
-
-    // OpenStreetMap üzerinden dünya çapında dağ ve zirve (peak) araması yapan Overpass sorgusu
-    const overpassQuery = `
-      [out:json][timeout:25];
-      (
-        node["natural"="peak"]["name"~"${value}", i];
-        way["natural"="peak"]["name"~"${value}", i];
-      );
-      out body;
-      >;
-      out skel qt;
-    `;
-
     try {
-      const response = await fetch('https://overpass-api.de/api/interpreter', {
-        method: 'POST',
-        body: overpassQuery,
-      });
-
+      // Nominatim üzerinden dünya çapındaki dağlar, zirveler ve yerler dahil arama
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}`,
+        {
+          headers: {
+            'User-Agent': 'ZirveTakipApp/1.0'
+          }
+        }
+      );
       const data = await response.json();
-      
-      // Gelen sonuçları kullanıcıya gösterilecek formata dönüştürelim
-      if (data && data.elements) {
-        const peaks = data.elements
-          .filter((el: any) => el.tags && el.tags.name)
-          .map((el: any) => ({
-            name: el.tags.name,
-            elevation: el.tags.ele ? `${el.tags.ele}m` : 'Yükseklik bilgisi yok',
-            lat: el.lat || (el.geometry && el.geometry[0]?.lat),
-            lon: el.lon || (el.geometry && el.geometry[0]?.lon),
-          }));
-
-        setSuggestions(peaks);
-      }
+      setSuggestions(data || []);
     } catch (error) {
-      console.error("Dağ arama hatası:", error);
-    } finally {
-      setLoading(false);
+      console.error("Arama hatası:", error);
     }
   };
 
@@ -62,27 +39,29 @@ export default function LocationInput() {
         type="text"
         value={query}
         onChange={(e) => handleSearch(e.target.value)}
-        placeholder="Dünya çapında dağ veya zirve ara (Örn: Ağrı, K2, Mont Blanc)..."
+        placeholder="Dağ, zirve veya lokasyon ara (Örn: Ağrı Dağı, K2, Kaçkar)..."
         className="w-full px-4 py-2 border rounded-lg bg-transparent text-white"
       />
       
-      {loading && (
-        <div className="absolute right-3 top-3 text-xs text-gray-400">Aranıyor...</div>
-      )}
-      
       {suggestions.length > 0 && (
         <ul className="absolute z-50 w-full mt-1 bg-zinc-900 border border-zinc-700 rounded-lg max-h-60 overflow-y-auto shadow-lg">
-          {suggestions.map((item: any, index: number) => (
+          {suggestions.map((item, index) => (
             <li
               key={index}
               onClick={() => {
-                setQuery(`${item.name} (${item.elevation})`);
+                setQuery(item.display_name);
                 setSuggestions([]);
+                if (onLocationSelect) {
+                  onLocationSelect({
+                    name: item.display_name,
+                    lat: item.lat,
+                    lon: item.lon
+                  });
+                }
               }}
-              className="px-4 py-2 hover:bg-zinc-800 cursor-pointer text-sm text-gray-200 border-b border-zinc-800 last:border-none flex justify-between items-center"
+              className="px-4 py-2 hover:bg-zinc-800 cursor-pointer text-sm text-gray-200 border-b border-zinc-800 last:border-none"
             >
-              <span className="font-medium text-white">{item.name}</span>
-              <span className="text-xs bg-zinc-800 px-2 py-1 rounded text-emerald-400">{item.elevation}</span>
+              {item.display_name}
             </li>
           ))}
         </ul>
