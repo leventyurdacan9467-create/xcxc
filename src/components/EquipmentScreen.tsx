@@ -1,10 +1,8 @@
 import { motion } from 'framer-motion';
-import { ArrowLeft, Thermometer, Wind, Eye, Droplets, Navigation } from 'lucide-react';
+import { ArrowLeft, Thermometer, Wind, Eye, Droplets, Calendar, CheckCircle2, Circle } from 'lucide-react';
 import type { Category, WeatherAnalysis } from '@/types';
-import { CATEGORY_META, getEquipmentForCategory } from '@/data';
+import { CATEGORY_META } from '@/data';
 import { useLang, type Lang } from '@/i18n';
-import { getWeatherDescription } from '@/hooks/useOpenMeteo';
-import { EquipmentCard } from './EquipmentCard';
 import { FloatingBagButton } from './FloatingBagButton';
 import { generateEquipment, generateDailyPlan, Language } from '../utils/expeditionLogic';
 
@@ -20,18 +18,6 @@ interface EquipmentScreenProps {
   onBack: () => void;
 }
 
-const GROUP_LABELS: Record<string, Record<Lang, string>> = {
-  shelter: { tr: 'Barınak', en: 'Shelter', fr: 'Abri', es: 'Refugio' },
-  clothing: { tr: 'Giyim', en: 'Clothing', fr: 'Vêtements', es: 'Ropa' },
-  kitchen: { tr: 'Mutfak', en: 'Kitchen', fr: 'Cuisine', es: 'Cocina' },
-  other: { tr: 'Diğer', en: 'Other', fr: 'Autre', es: 'Otros' },
-  'shelter_pack': { tr: 'Barınma & Taşıma', en: 'Shelter & Pack', fr: 'Abri & Transport', es: 'Refugio y Transporte' },
-  technical: { tr: 'Teknik', en: 'Technical', fr: 'Technique', es: 'Técnico' },
-  electronics: { tr: 'Elektronik & Medya', en: 'Electronics & Media', fr: 'Électronique & Médias', es: 'Electrónica y Medios' },
-  nutrition: { tr: 'Beslenme', en: 'Nutrition', fr: 'Nutrition', es: 'Nutrición' },
-  safety: { tr: 'Güvenlik', en: 'Safety', fr: 'Sécurité', es: 'Seguridad' },
-};
-
 export function EquipmentScreen({
   category,
   location,
@@ -45,18 +31,34 @@ export function EquipmentScreen({
 }: EquipmentScreenProps) {
   const { t, lang } = useLang();
   const meta = CATEGORY_META[category];
-  const items = getEquipmentForCategory(category);
-  const readyCount = items.filter((i) => statuses[i.id] === 'ready').length;
+  const currentLang = lang as Language;
 
   const categoryLabels: Record<Category, string> = {
     mountaineering: t.mountaineering,
     camping: t.camping,
   };
 
-  const groups = items.reduce<Record<string, typeof items>>((acc, item) => {
-    (acc[item.group] = acc[item.group] || []).push(item);
-    return acc;
-  }, {});
+  // 1. TARİHTEN GÜN SAYISINI HESAPLA (Örn: "2026-08-20 - 2026-08-25" -> 6 Gün)
+  let tripDays = 1;
+  if (date && date.includes(' - ')) {
+    const [startStr, endStr] = date.split(' - ');
+    const start = new Date(startStr);
+    const end = new Date(endStr);
+    if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+      const diffTime = Math.abs(end.getTime() - start.getTime());
+      tripDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    }
+  }
+
+  // 2. AKILLI MOTORU ÇALIŞTIR (Zirve mi? Kış mı? Kaç Gün?)
+  const isSummit = category === 'mountaineering';
+  
+  const dynamicGroups = generateEquipment({ days: tripDays, isSummit }, currentLang);
+  const dailyPlan = generateDailyPlan(tripDays, isSummit, currentLang);
+
+  // 3. İSTATİSTİKLER (İlerleme çubuğu için)
+  const allDynamicItems = Object.values(dynamicGroups).flat();
+  const readyCount = allDynamicItems.filter((i) => statuses[i.id] === 'ready').length;
 
   return (
     <motion.div
@@ -87,7 +89,7 @@ export function EquipmentScreen({
           <div className="flex items-center gap-2 mb-1">
             <meta.icon className="h-4 w-4 text-ember-400" />
             <span className="text-xs uppercase tracking-wider text-rock-200 font-medium">
-              {categoryLabels[category]}
+              {categoryLabels[category]} · {tripDays} {lang === 'tr' ? 'Gün' : 'Days'}
             </span>
           </div>
           <h1 className="text-2xl font-bold text-white">{location}</h1>
@@ -116,7 +118,6 @@ export function EquipmentScreen({
             </span>
           </div>
 
-          {/* Real-time weather metrics */}
           {analysis.currentWeather && (
             <div className="grid grid-cols-3 gap-2 mb-3">
               <div className="flex flex-col items-center rounded-lg bg-forest-900/50 p-2.5">
@@ -125,7 +126,7 @@ export function EquipmentScreen({
                   {analysis.currentWeather.temperature.toFixed(1)}°C
                 </span>
                 <span className="text-[10px] text-rock-400">
-                  {lang === 'tr' ? 'Sıcaklık' : lang === 'en' ? 'Temp' : lang === 'fr' ? 'Temp' : 'Temp'}
+                  {lang === 'tr' ? 'Sıcaklık' : 'Temp'}
                 </span>
               </div>
               <div className="flex flex-col items-center rounded-lg bg-forest-900/50 p-2.5">
@@ -150,68 +151,100 @@ export function EquipmentScreen({
               const icons = [Thermometer, Wind, Droplets, Eye];
               const DetailIcon = icons[i] || Thermometer;
               return (
-                <div
-                  key={i}
-                  className="flex items-start gap-2 rounded-lg bg-forest-900/50 p-2"
-                >
+                <div key={i} className="flex items-start gap-2 rounded-lg bg-forest-900/50 p-2">
                   <DetailIcon className="h-3.5 w-3.5 text-rock-400 shrink-0 mt-0.5" />
                   <p className="text-[11px] text-rock-300 leading-snug">{detail}</p>
                 </div>
               );
             })}
           </div>
-
-          <div className="mt-3 flex items-start gap-2 rounded-lg bg-ember-500/10 border border-ember-500/20 p-2.5">
-            <p className="text-[11px] text-ember-300 leading-snug">
-              {analysis.recommendation[lang]}
-            </p>
-          </div>
         </motion.div>
       </div>
 
       {/* Progress bar */}
-      <div className="px-5 pt-5">
+      <div className="px-5 pt-6">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs text-rock-400">{t.prepStatus}</span>
           <span className="text-xs font-bold text-white">
-            {readyCount}/{items.length}
+            {readyCount}/{allDynamicItems.length}
           </span>
         </div>
         <div className="h-2 rounded-full bg-forest-800 overflow-hidden">
           <motion.div
             className="h-full rounded-full bg-gradient-to-r from-ember-500 to-success-500"
-            animate={{ width: `${(readyCount / items.length) * 100}%` }}
+            animate={{ width: `${allDynamicItems.length > 0 ? (readyCount / allDynamicItems.length) * 100 : 0}%` }}
             transition={{ type: 'spring', stiffness: 120, damping: 20 }}
           />
         </div>
       </div>
 
-      {/* Equipment groups */}
-      <div className="mt-6 space-y-6">
-        {Object.entries(groups).map(([groupName, groupItems]) => {
-          const groupLabel = GROUP_LABELS[groupName]?.[lang] || groupName;
-          return (
-            <div key={groupName}>
-              <div className="px-5 mb-3 flex items-center gap-2">
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                  {groupLabel}
-                </h2>
-                <span className="text-xs text-rock-500">({groupItems.length})</span>
-              </div>
-              <div className="flex gap-3 overflow-x-auto no-scrollbar px-5 pb-2">
-                {groupItems.map((item) => (
-                  <EquipmentCard
-                    key={item.id}
-                    item={item}
-                    status={statuses[item.id] || 'pending'}
-                    onSingleClick={() => onSingleClick(item.id)}
-                    onDoubleClick={() => onDoubleClick(item.id)}
-                  />
-                ))}
-              </div>
+      {/* YENİ: GÜN BAZLI PLAN BÖLÜMÜ */}
+      <div className="px-5 mt-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Calendar className="h-5 w-5 text-ember-500" />
+          <h2 className="text-lg font-bold text-white uppercase tracking-wider">
+            {lang === 'tr' ? 'Etkinlik Planı' : 'Itinerary'}
+          </h2>
+        </div>
+        <div className="space-y-3">
+          {dailyPlan.map((day) => (
+            <div key={day.day} className="bg-forest-900/40 border border-white/5 p-4 rounded-xl">
+              <h3 className="font-semibold text-ember-400 text-sm mb-1">
+                {lang === 'tr' ? 'Gün' : 'Day'} {day.day}: {day.title}
+              </h3>
+              <p className="text-xs text-rock-300 leading-relaxed">{day.desc}</p>
             </div>
-          );
-        })}
+          ))}
+        </div>
+      </div>
+
+      {/* YENİ: AKILLI EKİPMAN LİSTESİ */}
+      <div className="mt-8 space-y-6">
+        {Object.entries(dynamicGroups).map(([groupName, groupItems]) => (
+          <div key={groupName}>
+            <div className="px-5 mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                {groupName} <span className="text-xs text-rock-500 ml-1">({groupItems.length})</span>
+              </h2>
+            </div>
+            
+            {/* Özel Dikey Liste (Notları göstermek ve tıklamaları yakalamak için) */}
+            <div className="px-5 space-y-2 pb-2">
+              {groupItems.map((item) => {
+                const isReady = statuses[item.id] === 'ready';
+                return (
+                  <motion.div
+                    whileTap={{ scale: 0.98 }}
+                    key={item.id}
+                    onClick={() => onSingleClick(item.id)}
+                    onDoubleClick={() => onDoubleClick(item.id)}
+                    className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer select-none ${
+                      isReady 
+                        ? 'bg-success-500/10 border-success-500/30' 
+                        : 'bg-forest-900/30 border-white/5 hover:bg-forest-900/50'
+                    }`}
+                  >
+                    <div className="flex flex-col pr-4">
+                      <span className={`text-sm font-medium ${isReady ? 'text-success-400 line-through opacity-70' : 'text-rock-200'}`}>
+                        {item.name}
+                      </span>
+                      {item.note && (
+                        <span className="text-[10px] text-ember-400/80 mt-1 leading-snug">{item.note}</span>
+                      )}
+                    </div>
+                    <div className="shrink-0">
+                      {isReady ? (
+                        <CheckCircle2 className="h-5 w-5 text-success-500" />
+                      ) : (
+                        <Circle className="h-5 w-5 text-rock-500" />
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
 
       <FloatingBagButton count={readyCount} onClick={onOpenBag} />
