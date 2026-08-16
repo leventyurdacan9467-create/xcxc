@@ -27,7 +27,7 @@ export function LocationInput({ onComplete }: LocationInputProps) {
     debounceRef.current = setTimeout(async () => {
       try {
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&limit=5`
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&limit=8&addressdetails=1&extratags=1`
         );
         const data = await response.json();
         setSuggestions(data || []);
@@ -79,7 +79,7 @@ export function LocationInput({ onComplete }: LocationInputProps) {
             type="text"
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Lokasyon ara (Örn: Aladağlar, Kaçkar)..."
+            placeholder="Lokasyon ara (Örn: Aladağlar, Everest)..."
             className="w-full pl-11 pr-4 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm text-white placeholder:text-rock-400 focus:outline-none focus:border-ember-500/50"
           />
           {suggestions.length > 0 && (
@@ -90,7 +90,8 @@ export function LocationInput({ onComplete }: LocationInputProps) {
                   onClick={() => handleSelectSuggestion(item)}
                   className="px-4 py-3 hover:bg-white/5 cursor-pointer text-sm text-rock-200 border-b border-white/5 last:border-none"
                 >
-                  {item.display_name}
+                  <span>{item.display_name}</span>
+                  <span className="text-xs text-rock-400 block">{item.type || item.class}</span>
                 </li>
               ))}
             </ul>
