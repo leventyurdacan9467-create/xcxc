@@ -7,9 +7,9 @@ import { generateEquipment } from '../utils/expeditionLogic';
 interface BagScreenProps {
   category: Category;
   date?: string;
-  statuses: Record<string, 'pending' | 'ready' | 'missing'>;
+  statuses: Record<string, string>;
   onClose: () => void;
-  onToggleStatus: (id: string, status: 'pending' | 'ready' | 'missing') => void;
+  onToggleStatus: (id: string, status: any) => void;
   onItemClick: (id: string) => void;
 }
 
@@ -27,9 +27,9 @@ export function BagScreen({
   let tripDays = 1;
   try {
     if (date && date.includes(' - ')) {
-      const [startStr, endStr] = date.split(' - ');
-      const start = new Date(startStr);
-      const end = new Date(endStr);
+      const parts = date.split(' - ');
+      const start = new Date(parts[0]);
+      const end = new Date(parts[1]);
       if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
         const diffTime = Math.abs(end.getTime() - start.getTime());
         tripDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
@@ -43,7 +43,7 @@ export function BagScreen({
 
   let dynamicGroups: Record<string, { id: string; name: string; note?: string }[]> = {};
   try {
-    dynamicGroups = generateEquipment({ days: tripDays, isSummit }, currentLang) || {};
+    dynamicGroups = generateEquipment({ days: tripDays, isSummit }, currentLang as any) || {};
   } catch (e) {
     dynamicGroups = {};
   }
