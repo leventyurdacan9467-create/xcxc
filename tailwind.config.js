@@ -1,0 +1,112 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        // Forest green ramp
+        forest: {
+          50: '#f0f7f4',
+          100: '#dcebe3',
+          200: '#bbd6c9',
+          300: '#8fb8a4',
+          400: '#5d9276',
+          500: '#3d7457',
+          600: '#2a5b42',
+          700: '#1f4533',
+          800: '#173326',
+          900: '#0f2419',
+          950: '#08160f',
+        },
+        // Rocky gray ramp
+        rock: {
+          50: '#f6f6f7',
+          100: '#e2e3e5',
+          200: '#c4c6ca',
+          300: '#9fa2a8',
+          400: '#787c83',
+          500: '#5b5f66',
+          600: '#484b51',
+          700: '#3a3d42',
+          800: '#2d3034',
+          900: '#1e2023',
+          950: '#121314',
+        },
+        // Campfire orange accent
+        ember: {
+          50: '#fff5ed',
+          100: '#ffe8d4',
+          200: '#ffcda8',
+          300: '#ffa971',
+          400: '#ff7a3a',
+          500: '#FF5A00',
+          600: '#e84400',
+          700: '#c03202',
+          800: '#9a2806',
+          900: '#7c240a',
+          950: '#420f02',
+        },
+        success: {
+          50: '#ecfdf5',
+          100: '#d1fae5',
+          200: '#a7f3d0',
+          300: '#6ee7b7',
+          400: '#34d399',
+          500: '#10b981',
+          600: '#059669',
+          700: '#047857',
+          800: '#065f46',
+          900: '#064e3b',
+        },
+        warning: {
+          50: '#fffbeb',
+          100: '#fef3c7',
+          200: '#fde68a',
+          300: '#fcd34d',
+          400: '#fbbf24',
+          500: '#f59e0b',
+          600: '#d97706',
+          700: '#b45309',
+          800: '#92400e',
+          900: '#78350f',
+        },
+        error: {
+          50: '#fef2f2',
+          100: '#fee2e2',
+          200: '#fecaca',
+          300: '#fca5a5',
+          400: '#f87171',
+          500: '#ef4444',
+          600: '#dc2626',
+          700: '#b91c1c',
+          800: '#991b1b',
+          900: '#7f1d1d',
+        },
+      },
+      fontFamily: {
+        sans: ['Sora', 'system-ui', 'sans-serif'],
+        display: ['Sora', 'system-ui', 'sans-serif'],
+      },
+      animation: {
+        'shimmer': 'shimmer 2s linear infinite',
+        'float': 'float 3s ease-in-out infinite',
+        'pulse-ring': 'pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite',
+      },
+      keyframes: {
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-8px)' },
+        },
+        'pulse-ring': {
+          '0%': { transform: 'scale(0.8)', opacity: '0.8' },
+          '100%': { transform: 'scale(2.2)', opacity: '0' },
+        },
+      },
+    },
+  },
+  plugins: [],
+};
