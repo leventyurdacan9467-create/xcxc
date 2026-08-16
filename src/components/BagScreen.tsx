@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { X, CheckCircle2, AlertCircle, ShoppingBag, ChevronRight } from 'lucide-react';
 import type { Category } from '@/types';
 import { useLang } from '@/i18n';
+import { generateEquipment, Language } from '../utils/expeditionLogic';
 
 interface BagScreenProps {
   category: Category;
@@ -14,29 +15,47 @@ interface BagScreenProps {
 
 export function BagScreen({
   category,
+  date = '',
   statuses = {},
   onClose,
   onToggleStatus,
   onItemClick,
 }: BagScreenProps) {
   const { lang } = useLang();
-  const currentLang = lang || 'tr';
+  const currentLang = (lang as Language) || 'tr';
+
+  let tripDays = 1;
+  try {
+    if (date && date.includes(' - ')) {
+      const [startStr, endStr] = date.split(' - ');
+      const start = new Date(startStr);
+      const end = new Date(endStr);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        tripDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      }
+    }
+  } catch (e) {
+    tripDays = 1;
+  }
+
+  const isSummit = category === 'mountaineering';
+  
+  // Güvenli motor çağrısı
+  let dynamicGroups: Record<string, { id: string; name: string; note?: string }[]> = {};
+  try {
+    dynamicGroups = generateEquipment({ days: tripDays, isSummit }, currentLang) || {};
+  } catch (e) {
+    dynamicGroups = {};
+  }
+
+  const allItems = Object.entries(dynamicGroups).flatMap(([group, items]) => 
+    (items || []).map(item => ({ ...item, group }))
+  );
 
   const safeStatuses = statuses || {};
-
-  // Hata riskini sıfırlamak için statik ve güvenli çanta listesi
-  const bagItems = [
-    { id: 'core-1', name: currentLang === 'tr' ? 'İlk Yardım Kiti' : 'First Aid Kit', group: 'Temel' },
-    { id: 'core-2', name: currentLang === 'tr' ? 'Su Filtresi / Arıtma' : 'Water Filter', group: 'Temel' },
-    { id: 'camp-1', name: currentLang === 'tr' ? '4 Mevsim Çadır' : '4-Season Tent', group: 'Kamp' },
-    { id: 'camp-2', name: currentLang === 'tr' ? 'Uyku Tulumu & Mat' : 'Sleeping Bag & Mat', group: 'Kamp' },
-    { id: 'tech-1', name: currentLang === 'tr' ? 'Dağcılık Kaskı' : 'Climbing Helmet', group: 'Teknik' },
-    { id: 'tech-2', name: currentLang === 'tr' ? 'Kazma ve Krampon' : 'Ice Axe & Crampons', group: 'Teknik' },
-    { id: 'elec-1', name: currentLang === 'tr' ? 'Powerbank' : 'Powerbank', group: 'Elektronik' },
-  ];
-
-  const readyItems = bagItems.filter(item => safeStatuses[item.id] === 'ready');
-  const missingItems = bagItems.filter(item => safeStatuses[item.id] !== 'ready');
+  const readyItems = allItems.filter(item => safeStatuses[item.id] === 'ready');
+  const missingItems = allItems.filter(item => safeStatuses[item.id] !== 'ready');
 
   return (
     <motion.div
@@ -46,7 +65,6 @@ export function BagScreen({
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="fixed inset-0 z-50 flex flex-col bg-forest-950 text-white"
     >
-      {/* Üst Kısım / Header */}
       <div className="flex items-center justify-between p-5 border-b border-white/10 bg-forest-950/90 backdrop-blur-md z-10">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ember-500/20 text-ember-500">
@@ -68,7 +86,6 @@ export function BagScreen({
       </div>
 
       <div className="flex-1 overflow-y-auto p-5 space-y-8 pb-20">
-        {/* HAZIR OLANLAR BÖLÜMÜ */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2 text-success-500">
@@ -108,7 +125,6 @@ export function BagScreen({
           )}
         </section>
 
-        {/* EKSİKLER BÖLÜMÜ */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2 text-ember-500">
@@ -131,6 +147,7 @@ export function BagScreen({
                 <div className="flex-1 cursor-pointer" onClick={() => onToggleStatus(item.id, 'ready')}>
                   <p className="text-[10px] text-rock-500 mb-0.5 uppercase tracking-wider">{item.group}</p>
                   <p className="text-sm font-medium text-white">{item.name}</p>
+                  {item.note && <p className="text-[10px] text-ember-400/80 mt-1">{item.note}</p>}
                 </div>
                 <button onClick={() => onItemClick(item.id)} className="p-2 text-rock-400 hover:text-white ml-2 flex items-center gap-2">
                   <span className="text-[10px] uppercase tracking-wider text-rock-500">
