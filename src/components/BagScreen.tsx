@@ -2,7 +2,6 @@ import { motion } from 'framer-motion';
 import { X, CheckCircle2, AlertCircle, ShoppingBag, ChevronRight } from 'lucide-react';
 import type { Category } from '@/types';
 import { useLang } from '@/i18n';
-import { generateEquipment, Language } from '../utils/expeditionLogic';
 
 interface BagScreenProps {
   category: Category;
@@ -15,43 +14,29 @@ interface BagScreenProps {
 
 export function BagScreen({
   category,
-  date = '',
   statuses = {},
   onClose,
   onToggleStatus,
   onItemClick,
 }: BagScreenProps) {
   const { lang } = useLang();
-  const currentLang = (lang as Language) || 'tr';
-
-  // Güvenli gün hesaplaması
-  let tripDays = 1;
-  try {
-    if (date && date.includes(' - ')) {
-      const [startStr, endStr] = date.split(' - ');
-      const start = new Date(startStr);
-      const end = new Date(endStr);
-      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-        const diffTime = Math.abs(end.getTime() - start.getTime());
-        tripDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-      }
-    }
-  } catch (e) {
-    tripDays = 1;
-  }
-
-  const isSummit = category === 'mountaineering';
-  
-  // Güvenli veri üretimi (Hata almayı önler)
-  const dynamicGroups = generateEquipment({ days: tripDays, isSummit }, currentLang) || {};
-  
-  const allItems = Object.entries(dynamicGroups).flatMap(([group, items]) => 
-    (items || []).map(item => ({ ...item, group }))
-  );
+  const currentLang = lang || 'tr';
 
   const safeStatuses = statuses || {};
-  const readyItems = allItems.filter(item => safeStatuses[item.id] === 'ready');
-  const missingItems = allItems.filter(item => safeStatuses[item.id] !== 'ready');
+
+  // Hata riskini sıfırlamak için statik ve güvenli çanta listesi
+  const bagItems = [
+    { id: 'core-1', name: currentLang === 'tr' ? 'İlk Yardım Kiti' : 'First Aid Kit', group: 'Temel' },
+    { id: 'core-2', name: currentLang === 'tr' ? 'Su Filtresi / Arıtma' : 'Water Filter', group: 'Temel' },
+    { id: 'camp-1', name: currentLang === 'tr' ? '4 Mevsim Çadır' : '4-Season Tent', group: 'Kamp' },
+    { id: 'camp-2', name: currentLang === 'tr' ? 'Uyku Tulumu & Mat' : 'Sleeping Bag & Mat', group: 'Kamp' },
+    { id: 'tech-1', name: currentLang === 'tr' ? 'Dağcılık Kaskı' : 'Climbing Helmet', group: 'Teknik' },
+    { id: 'tech-2', name: currentLang === 'tr' ? 'Kazma ve Krampon' : 'Ice Axe & Crampons', group: 'Teknik' },
+    { id: 'elec-1', name: currentLang === 'tr' ? 'Powerbank' : 'Powerbank', group: 'Elektronik' },
+  ];
+
+  const readyItems = bagItems.filter(item => safeStatuses[item.id] === 'ready');
+  const missingItems = bagItems.filter(item => safeStatuses[item.id] !== 'ready');
 
   return (
     <motion.div
@@ -100,7 +85,7 @@ export function BagScreen({
           {readyItems.length === 0 ? (
             <div className="p-8 rounded-2xl border border-dashed border-white/10 flex items-center justify-center text-center">
               <p className="text-sm text-rock-500">
-                {currentLang === 'tr' ? 'Henüz hiçbir ekipman hazır değil. Kartlara tek tıkla işaretle.' : 'No items ready yet. Tap a card to mark as ready.'}
+                {currentLang === 'tr' ? 'Henüz hiçbir ekipman hazır değil.' : 'No items ready yet.'}
               </p>
             </div>
           ) : (
@@ -146,7 +131,6 @@ export function BagScreen({
                 <div className="flex-1 cursor-pointer" onClick={() => onToggleStatus(item.id, 'ready')}>
                   <p className="text-[10px] text-rock-500 mb-0.5 uppercase tracking-wider">{item.group}</p>
                   <p className="text-sm font-medium text-white">{item.name}</p>
-                  {item.note && <p className="text-[10px] text-ember-400/80 mt-1">{item.note}</p>}
                 </div>
                 <button onClick={() => onItemClick(item.id)} className="p-2 text-rock-400 hover:text-white ml-2 flex items-center gap-2">
                   <span className="text-[10px] uppercase tracking-wider text-rock-500">
