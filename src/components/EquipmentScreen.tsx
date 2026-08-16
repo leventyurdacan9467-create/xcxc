@@ -6,6 +6,7 @@ import { useLang, type Lang } from '@/i18n';
 import { getWeatherDescription } from '@/hooks/useOpenMeteo';
 import { EquipmentCard } from './EquipmentCard';
 import { FloatingBagButton } from './FloatingBagButton';
+import { generateEquipment, generateDailyPlan, Language } from '../utils/expeditionLogic';
 
 interface EquipmentScreenProps {
   category: Category;
