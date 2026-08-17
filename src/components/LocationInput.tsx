@@ -133,14 +133,12 @@ export function LocationInput({ onComplete }: LocationInputProps) {
           </div>
           <div className="flex-1">
             <label className="text-xs text-rock-400 mb-1 block pl-1">Bitiş</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              min={startDate || undefined}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm text-white focus:outline-none focus:border-ember-500/50"
-            />
+           <input
+  type="date"
+  onChange={(e) => setEndDate(e.target.value)}
+  min={startDate || undefined}
+  className="w-full px-4 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm text-white"
+/>
           </div>
         </div>
 
