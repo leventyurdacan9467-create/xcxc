@@ -1,36 +1,36 @@
 // src/utils/admob.ts
-import { AdMob, RewardAdPluginEvents } from '@capacitor-community/admob';
 
 export const initializeAdMob = async () => {
   try {
-    await AdMob.initialize({
-      requestTrackingAuthorization: true,
-    });
+    const { AdMob } = await import('@capacitor-community/admob');
+    await AdMob.initialize({ requestTrackingAuthorization: true });
   } catch (e) {
-    console.log('AdMob web ortamında simüle ediliyor.');
+    console.log('Web/Vercel ortamında AdMob simülasyon modunda.');
   }
 };
 
 export const showRewardedAd = async (): Promise<boolean> => {
-  return new Promise(async (resolve) => {
-    try {
-      // Google AdMob Test Ödüllü Reklam ID'si
+  try {
+    const { AdMob, RewardAdPluginEvents } = await import('@capacitor-community/admob');
+    
+    return new Promise(async (resolve) => {
+      // Reklam Birimi Kimliği koda entegre edildi:
       await AdMob.prepareRewardVideoAd({
-        adId: 'ca-app-pub-3940256099942544/5224354917',
+        adId: 'ca-app-pub-4198597673500025/5368528668',
       });
 
-      const rewardListener = AdMob.addListener(
+      const listener = AdMob.addListener(
         RewardAdPluginEvents.Rewarded,
         () => {
-          rewardListener.remove();
+          listener.remove();
           resolve(true);
         }
       );
 
       await AdMob.showRewardVideoAd();
-    } catch (error) {
-      console.log('AdMob yerel modda simüle ediliyor.');
-      setTimeout(() => resolve(true), 1200);
-    }
-  });
+    });
+  } catch (e) {
+    // Web ve Vercel derlemesinde hata vermemesi için simülasyon
+    return new Promise((resolve) => setTimeout(() => resolve(true), 1200));
+  }
 };
