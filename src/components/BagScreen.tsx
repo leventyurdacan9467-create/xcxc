@@ -109,19 +109,23 @@ export function BagScreen({
             </div>
           ) : (
             <div className="space-y-3">
-              {readyItems.map(item => (
+            {readyItems.map(item => (
                 <div 
                   key={item.id} 
                   className="flex items-center p-3 rounded-xl bg-success-500/10 border border-success-500/20"
                 >
-                  <div className="flex-1 cursor-pointer" onClick={() => onToggleStatus(item.id, 'pending')}>
-                    <p className="text-[10px] text-success-400/80 mb-0.5 uppercase tracking-wider">{item.group}</p>
-                    <p className="text-sm font-medium text-success-400 line-through">{item.name}</p>
+                  <div className="flex items-center gap-3 flex-1 cursor-pointer" onClick={() => onToggleStatus(item.id, 'pending')}>
+                    {item.icon && <item.icon className="h-4 w-4 text-success-400 shrink-0" />}
+                    <div>
+                      <p className="text-[10px] text-success-400/80 mb-0.5 uppercase tracking-wider">{item.group}</p>
+                      <p className="text-sm font-medium text-success-400 line-through">{item.name}</p>
+                    </div>
                   </div>
                   <button onClick={() => onItemClick(item.id)} className="p-2 text-success-400 hover:text-success-300 ml-2">
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
+              ))}
               ))}
             </div>
           )}
