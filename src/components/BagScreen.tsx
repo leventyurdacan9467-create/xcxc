@@ -145,15 +145,18 @@ export function BagScreen({
           </div>
           
           <div className="space-y-3">
-            {missingItems.map(item => (
+           {missingItems.map(item => (
               <div 
                 key={item.id} 
                 className="flex items-center p-3 rounded-xl bg-forest-900/30 border border-white/5 hover:bg-forest-900/50"
               >
-                <div className="flex-1 cursor-pointer" onClick={() => onToggleStatus(item.id, 'ready')}>
-                  <p className="text-[10px] text-rock-500 mb-0.5 uppercase tracking-wider">{item.group}</p>
-                  <p className="text-sm font-medium text-white">{item.name}</p>
-                  {item.note && <p className="text-[10px] text-ember-400/80 mt-1">{item.note}</p>}
+                <div className="flex items-center gap-3 flex-1 cursor-pointer" onClick={() => onToggleStatus(item.id, 'ready')}>
+                  {item.icon && <item.icon className="h-4 w-4 text-rock-400 shrink-0" />}
+                  <div>
+                    <p className="text-[10px] text-rock-500 mb-0.5 uppercase tracking-wider">{item.group}</p>
+                    <p className="text-sm font-medium text-white">{item.name}</p>
+                    {item.note && <p className="text-[10px] text-ember-400/80 mt-1">{item.note}</p>}
+                  </div>
                 </div>
                 <button onClick={() => onItemClick(item.id)} className="p-2 text-rock-400 hover:text-white ml-2 flex items-center gap-2">
                   <span className="text-[10px] uppercase tracking-wider text-rock-500">
