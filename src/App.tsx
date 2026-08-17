@@ -1,6 +1,6 @@
-import { CreateExpeditionModal } from './components/CreateExpeditionModal';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { ChevronLeft, Compass } from 'lucide-react';
 import type { Category, WeatherAnalysis } from '@/types';
 import { CategorySelect } from '@/components/CategorySelect';
 import { LocationInput } from '@/components/LocationInput';
@@ -9,6 +9,10 @@ import { EquipmentScreen } from '@/components/EquipmentScreen';
 import { BagScreen } from '@/components/BagScreen';
 import { ItemDetailSheet } from '@/components/ItemDetailSheet';
 import { Toast, type ToastData } from '@/components/Toast';
+import { LimitPaywallModal } from '@/components/LimitPaywallModal';
+import { PastExpeditionsModal } from '@/components/PastExpeditionsModal';
+import { useExpeditionArchive } from '@/hooks/useExpeditionArchive';
+import { initializeAdMob } from '@/utils/admob';
 import { useRemoteConfig } from '@/hooks/useRemoteConfig';
 import { generateEquipment, Language } from '@/utils/expeditionLogic';
 import { useLang } from '@/i18n';
@@ -21,6 +25,15 @@ function App() {
   const { t, lang } = useLang();
   const currentLang = (lang as Language) || 'tr';
 
+  const {
+    expeditions,
+    canCreateNew,
+    maxAllowed,
+    saveExpedition,
+    deleteExpedition,
+    grantBonusSlotByAd,
+  } = useExpeditionArchive(false);
+
   const [stage, setStage] = useState<Stage>('category');
   const [category, setCategory] = useState<Category | null>(null);
   const [location, setLocation] = useState('');
@@ -30,8 +43,16 @@ function App() {
   const [statuses, setStatuses] = useState<Record<string, ItemStatus>>({});
   const [bagOpen, setBagOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+
   const [toast, setToast] = useState<ToastData | null>(null);
   const toastId = useRef(0);
+
+  useEffect(() => {
+    initializeAdMob();
+  }, []);
 
   const showToast = useCallback((message: string) => {
     toastId.current += 1;
@@ -50,6 +71,12 @@ function App() {
   };
 
   const handleLocationComplete = (loc: string, d: string, c?: { lat: number; lng: number }) => {
+    // Limit kontrolü yap: Eğer limit dolduysa ilerletme, modal aç!
+    if (!canCreateNew) {
+      setShowLimitModal(true);
+      return;
+    }
+
     setLocation(loc);
     setDate(d);
     setCoords(c);
@@ -86,6 +113,15 @@ function App() {
     allItems.forEach((item) => {
       initialStatuses[item.id] = 'pending';
     });
+
+    // Otomatik Ekspedisyon Kaydı yapılıyor
+    saveExpedition({
+      name: location || 'Yeni Ekspedisyon',
+      days: params.days,
+      isSummit: params.isSummit,
+      items: allItems,
+    });
+
     setStatuses(initialStatuses);
     setStage('equipment');
   };
@@ -112,9 +148,9 @@ function App() {
     setSelectedItemId(id);
   }, []);
 
-  const handleBack = () => {
-    setStage('location');
-  };
+  // Nazik ve Belirgin Geri Dönüş Fonksiyonları
+  const handleBackToCategory = () => setStage('category');
+  const handleBackToLocation = () => setStage('location');
 
   const selectedItem = (() => {
     if (!selectedItemId || !category) return null;
@@ -133,20 +169,41 @@ function App() {
     <div className="relative mx-auto min-h-screen max-w-md overflow-hidden bg-forest-950">
       <Toast toast={toast} onDismiss={() => setToast(null)} />
 
-      {/* Ekspedisyon Limiti & Kaydet Butonu (Giriş ekranında üstte görünür) */}
-      {stage === 'category' && <CreateExpeditionModal />}
+      {/* Belirgin & Nazik Geri Dönüş Butonu (Lokasyon ve Ekipman Aşamasında) */}
+      {stage === 'location' && (
+        <button
+          onClick={handleBackToCategory}
+          className="absolute top-4 left-4 z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-slate-300 hover:text-white text-xs font-medium backdrop-blur-md transition-all active:scale-95"
+        >
+          <ChevronLeft size={16} /> Geri Dön
+        </button>
+      )}
 
       <AnimatePresence mode="wait">
         {stage === 'category' && (
-          <CategorySelect
-            key="cat"
-            onSelect={handleCategorySelect}
-            onDevTap={handleDevTap}
-          />
+          <div className="flex flex-col min-h-screen">
+            <CategorySelect
+              key="cat"
+              onSelect={handleCategorySelect}
+              onDevTap={handleDevTap}
+            />
+            {/* Şık "Geçmiş Ekspedisyonlarım" Butonu */}
+            <div className="p-4 bg-forest-950/80 border-t border-slate-900">
+              <button
+                onClick={() => setShowArchiveModal(true)}
+                className="w-full py-3 px-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/40 text-slate-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              >
+                <Compass size={16} className="text-emerald-400" />
+                Geçmiş Ekspedisyonlarım ({expeditions.length})
+              </button>
+            </div>
+          </div>
         )}
+
         {stage === 'location' && (
           <LocationInput key="loc" onComplete={handleLocationComplete} />
         )}
+
         {stage === 'analysis' && category && (
           <AnalysisLoading
             key="ana"
@@ -169,9 +226,24 @@ function App() {
           onSingleClick={handleSingleClick}
           onDoubleClick={handleDoubleClick}
           onOpenBag={() => setBagOpen(true)}
-          onBack={handleBack}
+          onBack={handleBackToLocation}
         />
       )}
+
+      {/* Modallar */}
+      <LimitPaywallModal
+        isOpen={showLimitModal}
+        maxAllowed={maxAllowed}
+        onClose={() => setShowLimitModal(false)}
+        onAdWatched={grantBonusSlotByAd}
+      />
+
+      <PastExpeditionsModal
+        isOpen={showArchiveModal}
+        expeditions={expeditions}
+        onClose={() => setShowArchiveModal(false)}
+        onDelete={deleteExpedition}
+      />
 
       <AnimatePresence>
         {bagOpen && category && (
