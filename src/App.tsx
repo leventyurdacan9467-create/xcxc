@@ -1,3 +1,4 @@
+import { LimitPaywallModal } from './components/LimitPaywallModal';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { ChevronLeft, Compass } from 'lucide-react';
