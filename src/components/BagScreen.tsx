@@ -71,7 +71,7 @@ export function BagScreen({
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ember-500/20 text-ember-500">
             <ShoppingBag className="h-5 w-5" />
           </div>
-         <div>
+          <div>
             <h2 className="text-lg font-bold">{currentLang === 'tr' ? 'Çantan' : 'Your Bag'}</h2>
             <p className="text-xs text-rock-400">
               {readyItems.length} {currentLang === 'tr' ? 'hazır' : 'ready'} · {missingItems.length} {currentLang === 'tr' ? 'eksik' : 'missing'}
@@ -109,7 +109,7 @@ export function BagScreen({
             </div>
           ) : (
             <div className="space-y-3">
-            {readyItems.map(item => (
+              {readyItems.map(item => (
                 <div 
                   key={item.id} 
                   className="flex items-center p-3 rounded-xl bg-success-500/10 border border-success-500/20"
@@ -125,7 +125,6 @@ export function BagScreen({
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
-              ))}
               ))}
             </div>
           )}
@@ -145,7 +144,7 @@ export function BagScreen({
           </div>
           
           <div className="space-y-3">
-           {missingItems.map(item => (
+            {missingItems.map(item => (
               <div 
                 key={item.id} 
                 className="flex items-center p-3 rounded-xl bg-forest-900/30 border border-white/5 hover:bg-forest-900/50"
