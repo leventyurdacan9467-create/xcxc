@@ -1,3 +1,4 @@
+import { CreateExpeditionModal } from './components/CreateExpeditionModal';
 import { useState, useCallback, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import type { Category, WeatherAnalysis } from '@/types';
