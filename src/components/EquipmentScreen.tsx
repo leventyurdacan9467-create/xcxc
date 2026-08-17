@@ -205,13 +205,18 @@ export function EquipmentScreen({
                         : 'bg-forest-900/30 border-white/5 hover:bg-forest-900/50'
                     }`}
                   >
-                    <div className="flex flex-col pr-4">
-                      <span className={`text-sm font-medium ${isReady ? 'text-success-400 line-through opacity-70' : 'text-rock-200'}`}>
-                        {item.name}
-                      </span>
-                      {item.note && (
-                        <span className="text-[10px] text-ember-400/80 mt-1 leading-snug">{item.note}</span>
-                      )}
+                    <div className="flex items-center gap-3 pr-4">
+                      <div className={`shrink-0 flex h-9 w-9 items-center justify-center rounded-lg ${isReady ? 'bg-success-500/15' : 'bg-ember-500/10'}`}>
+                        <item.icon className={`h-4 w-4 ${isReady ? 'text-success-400' : 'text-ember-400'}`} />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className={`text-sm font-medium ${isReady ? 'text-success-400 line-through opacity-70' : 'text-rock-200'}`}>
+                          {item.name}
+                        </span>
+                        {item.note && (
+                          <span className="text-[10px] text-ember-400/80 mt-1 leading-snug">{item.note}</span>
+                        )}
+                      </div>
                     </div>
                     <div className="shrink-0">
                       {isReady ? (
