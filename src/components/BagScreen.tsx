@@ -55,6 +55,8 @@ export function BagScreen({
   const safeStatuses = statuses || {};
   const readyItems = allItems.filter(item => safeStatuses[item.id] === 'ready');
   const missingItems = allItems.filter(item => safeStatuses[item.id] !== 'ready');
+  const totalWeightGrams = readyItems.reduce((sum, item) => sum + (item.weightGrams || 0), 0);
+  const totalWeightKg = (totalWeightGrams / 1000).toFixed(1);
 
   return (
     <motion.div
@@ -69,10 +71,11 @@ export function BagScreen({
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ember-500/20 text-ember-500">
             <ShoppingBag className="h-5 w-5" />
           </div>
-          <div>
+         <div>
             <h2 className="text-lg font-bold">{currentLang === 'tr' ? 'Çantan' : 'Your Bag'}</h2>
             <p className="text-xs text-rock-400">
               {readyItems.length} {currentLang === 'tr' ? 'hazır' : 'ready'} · {missingItems.length} {currentLang === 'tr' ? 'eksik' : 'missing'}
+              {readyItems.length > 0 && ` · ~${totalWeightKg} kg`}
             </p>
           </div>
         </div>
