@@ -9,6 +9,11 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
+        <!-- Google AdMob Uygulama Kimliği -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-4198597673500025~6566060266" />
+
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
             android:name=".MainActivity"
