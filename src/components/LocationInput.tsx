@@ -15,7 +15,6 @@ export function LocationInput({ onComplete }: LocationInputProps) {
   const [searching, setSearching] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Overpass yerine Nominatim kullanarak dünyadaki tüm dağ, zirve ve kamp yerlerini anında ve kesintisiz çeken fonksiyon
   const handleSearch = (value: string) => {
     setQuery(value);
     setSelectedCoords(undefined);
@@ -29,13 +28,12 @@ export function LocationInput({ onComplete }: LocationInputProps) {
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       try {
-        // Dağcılık odaklı terimleri de destekleyen dünya çapında arama
         const response = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&addressdetails=1`,
           {
             headers: {
-              'User-Agent': 'ZirveTakipApp/1.0'
-            }
+              'User-Agent': 'ZirveTakipApp/1.0',
+            },
           }
         );
 
@@ -133,12 +131,13 @@ export function LocationInput({ onComplete }: LocationInputProps) {
           </div>
           <div className="flex-1">
             <label className="text-xs text-rock-400 mb-1 block pl-1">Bitiş</label>
-           <input
-  type="date"
-  onChange={(e) => setEndDate(e.target.value)}
-  min={startDate || undefined}
-  className="w-full px-4 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm text-white"
-/>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={startDate || undefined}
+              className="w-full px-4 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm text-white focus:outline-none focus:border-ember-500/50"
+            />
           </div>
         </div>
 
