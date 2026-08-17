@@ -23,7 +23,7 @@ export const useExpeditionArchive = (isPremium: boolean = false) => {
   }, []);
 
   // Toplam İzin Verilen Ekspedisyon Sayısı
-  const maxAllowed = isPremium ? Infinity : 1 + bonusSlots;
+  const maxAllowed = isPremium ? Infinity : 5 + bonusSlots;
   const canCreateNew = isPremium || expeditions.length < maxAllowed;
 
   // Yeni Ekspedisyon Kaydet
