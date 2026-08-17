@@ -1,4 +1,3 @@
-import { LimitPaywallModal } from './components/LimitPaywallModal';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { ChevronLeft, Compass } from 'lucide-react';
@@ -72,7 +71,6 @@ function App() {
   };
 
   const handleLocationComplete = (loc: string, d: string, c?: { lat: number; lng: number }) => {
-    // Limit kontrolü yap: Eğer limit dolduysa ilerletme, modal aç!
     if (!canCreateNew) {
       setShowLimitModal(true);
       return;
@@ -115,7 +113,6 @@ function App() {
       initialStatuses[item.id] = 'pending';
     });
 
-    // Otomatik Ekspedisyon Kaydı yapılıyor
     saveExpedition({
       name: location || 'Yeni Ekspedisyon',
       days: params.days,
@@ -149,7 +146,6 @@ function App() {
     setSelectedItemId(id);
   }, []);
 
-  // Nazik ve Belirgin Geri Dönüş Fonksiyonları
   const handleBackToCategory = () => setStage('category');
   const handleBackToLocation = () => setStage('location');
 
@@ -170,7 +166,6 @@ function App() {
     <div className="relative mx-auto min-h-screen max-w-md overflow-hidden bg-forest-950">
       <Toast toast={toast} onDismiss={() => setToast(null)} />
 
-      {/* Belirgin & Nazik Geri Dönüş Butonu (Lokasyon ve Ekipman Aşamasında) */}
       {stage === 'location' && (
         <button
           onClick={handleBackToCategory}
@@ -188,7 +183,6 @@ function App() {
               onSelect={handleCategorySelect}
               onDevTap={handleDevTap}
             />
-            {/* Şık "Geçmiş Ekspedisyonlarım" Butonu */}
             <div className="p-4 bg-forest-950/80 border-t border-slate-900">
               <button
                 onClick={() => setShowArchiveModal(true)}
@@ -231,7 +225,6 @@ function App() {
         />
       )}
 
-      {/* Modallar */}
       <LimitPaywallModal
         isOpen={showLimitModal}
         maxAllowed={maxAllowed}
