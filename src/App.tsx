@@ -56,7 +56,6 @@ function App() {
     setStage('analysis');
   };
 
-  // Verilen tarih ve kategoriye göre gün sayısını ve zirve durumunu hesapla
   const getTripParams = useCallback(() => {
     let tripDays = 1;
     try {
@@ -79,7 +78,6 @@ function App() {
   const handleAnalysisComplete = (result: WeatherAnalysis) => {
     setAnalysis(result);
 
-    // Dinamik ekipman listesini üret, tüm item'ları 'pending' olarak başlat
     const params = getTripParams();
     const groups = generateEquipment(params, currentLang) || {};
     const allItems = Object.values(groups).flat();
@@ -118,7 +116,6 @@ function App() {
     setStage('location');
   };
 
-  // Seçili item'ın tam bilgisini (isim, not, grup) dinamik listeden bul
   const selectedItem = (() => {
     if (!selectedItemId || !category) return null;
     const params = getTripParams();
@@ -135,6 +132,9 @@ function App() {
   return (
     <div className="relative mx-auto min-h-screen max-w-md overflow-hidden bg-forest-950">
       <Toast toast={toast} onDismiss={() => setToast(null)} />
+
+      {/* Ekspedisyon Limiti & Kaydet Butonu (Giriş ekranında üstte görünür) */}
+      {stage === 'category' && <CreateExpeditionModal />}
 
       <AnimatePresence mode="wait">
         {stage === 'category' && (
