@@ -1,5 +1,16 @@
 // src/utils/expeditionLogic.ts
 
+import {
+  HeartPulse,
+  Droplet,
+  Tent,
+  Moon,
+  HardHat,
+  Pickaxe,
+  BatteryCharging,
+  Sun,
+} from 'lucide-react';
+
 export type Language = 'tr' | 'en' | 'fr' | 'es';
 
 export interface TripParams {
@@ -8,7 +19,6 @@ export interface TripParams {
   isWinter?: boolean;
 }
 
-// Çoklu dil destekli metin yapısı
 interface TranslatableText {
   tr: string;
   en: string;
@@ -21,11 +31,11 @@ export interface EquipmentItem {
   category: TranslatableText;
   name: TranslatableText;
   note?: TranslatableText;
-  // Bu ürünün listeye eklenip eklenmeyeceğine karar veren akıllı koşul
+  icon: any;
+  weightGrams: number;
   condition: (params: TripParams) => boolean;
 }
 
-// 1. KATEGORİ ÇEVİRİLERİ
 const CATEGORIES = {
   CORE: { tr: 'Temel İhtiyaçlar', en: 'Core Essentials', fr: 'Essentiels de Base', es: 'Esenciales Básicos' },
   SAFETY: { tr: 'Güvenlik & Navigasyon', en: 'Safety & Navigation', fr: 'Sécurité et Navigation', es: 'Seguridad y Navegación' },
@@ -34,42 +44,46 @@ const CATEGORIES = {
   TECH: { tr: 'Teknik Donanım', en: 'Technical Gear', fr: 'Matériel Technique', es: 'Equipo Técnico' }
 };
 
-// 2. AKILLI EKİPMAN VERİTABANI
 const MASTER_EQUIPMENT: EquipmentItem[] = [
-  // Her koşulda gerekenler
   {
     id: 'core-1',
     category: CATEGORIES.CORE,
     name: { tr: 'İlk Yardım Kiti', en: 'First Aid Kit', fr: 'Trousse de Premiers Secours', es: 'Botiquín de Primeros Auxilios' },
-    condition: () => true 
+    icon: HeartPulse,
+    weightGrams: 350,
+    condition: () => true
   },
   {
     id: 'core-2',
     category: CATEGORIES.CORE,
     name: { tr: 'Su Filtresi / Arıtma Tableti', en: 'Water Filter / Tablets', fr: 'Filtre à Eau', es: 'Filtro de Agua' },
     note: { tr: 'Doğal kaynaklar için hayati', en: 'Crucial for natural sources', fr: 'Crucial pour les sources naturelles', es: 'Crucial para fuentes naturales' },
+    icon: Droplet,
+    weightGrams: 150,
     condition: (p) => p.days > 1
   },
-  
-  // Sadece konaklamalı (days > 1) ise eklenecek kamp eşyaları
   {
     id: 'camp-1',
     category: CATEGORIES.CAMP,
     name: { tr: '4 Mevsim Çadır', en: '4-Season Tent', fr: 'Tente 4 Saisons', es: 'Tienda de 4 Estaciones' },
+    icon: Tent,
+    weightGrams: 2200,
     condition: (p) => p.days > 1
   },
   {
     id: 'camp-2',
     category: CATEGORIES.CAMP,
     name: { tr: 'Uyku Tulumu & İzolasyonlu Mat', en: 'Sleeping Bag & Insulated Mat', fr: 'Sac de Couchage et Tapis', es: 'Saco de Dormir y Colchoneta' },
+    icon: Moon,
+    weightGrams: 1800,
     condition: (p) => p.days > 1
   },
-
-  // Zirve (isSummit) durumunda eklenecek teknik donanımlar
   {
     id: 'tech-1',
     category: CATEGORIES.TECH,
     name: { tr: 'Dağcılık Kaskı', en: 'Climbing Helmet', fr: 'Casque d\'Alpinisme', es: 'Casco de Escalada' },
+    icon: HardHat,
+    weightGrams: 400,
     condition: (p) => p.isSummit
   },
   {
@@ -77,14 +91,16 @@ const MASTER_EQUIPMENT: EquipmentItem[] = [
     category: CATEGORIES.TECH,
     name: { tr: 'Kazma ve Krampon', en: 'Ice Axe & Crampons', fr: 'Piolet et Crampons', es: 'Piolet y Crampones' },
     note: { tr: 'Buzul ve sert kar geçişleri için', en: 'For glacier and hard snow', fr: 'Pour glacier et neige dure', es: 'Para glaciar y nieve dura' },
+    icon: Pickaxe,
+    weightGrams: 1200,
     condition: (p) => p.isSummit || p.isWinter === true
   },
-
-  // Süreye göre adapte olan elektronikler
   {
     id: 'elec-1',
     category: CATEGORIES.ELEC,
     name: { tr: '10.000 mAh Powerbank', en: '10.000 mAh Powerbank', fr: 'Batterie Externe 10.000 mAh', es: 'Batería Externa 10.000 mAh' },
+    icon: BatteryCharging,
+    weightGrams: 220,
     condition: (p) => p.days <= 2
   },
   {
@@ -92,33 +108,34 @@ const MASTER_EQUIPMENT: EquipmentItem[] = [
     category: CATEGORIES.ELEC,
     name: { tr: '20.000 mAh Powerbank + Solar Panel', en: '20.000 mAh Powerbank + Solar Panel', fr: 'Batterie 20.000 mAh + Panneau Solaire', es: 'Batería 20.000 mAh + Panel Solar' },
     note: { tr: 'Uzun ekspedisyon güç kaynağı', en: 'Long expedition power source', fr: 'Source d\'énergie pour longue expédition', es: 'Fuente de energía para expedición larga' },
+    icon: Sun,
+    weightGrams: 480,
     condition: (p) => p.days > 2
   }
 ];
 
-// 3. LİSTE OLUŞTURUCU FONKSİYON
 export function generateEquipment(params: TripParams, lang: Language = 'tr') {
   const filtered = MASTER_EQUIPMENT.filter(item => item.condition(params));
-  
-  // Kategorilere göre grupla
+
   const grouped = filtered.reduce((acc, item) => {
     const catName = item.category[lang];
     if (!acc[catName]) acc[catName] = [];
     acc[catName].push({
       id: item.id,
       name: item.name[lang],
-      note: item.note ? item.note[lang] : undefined
+      note: item.note ? item.note[lang] : undefined,
+      icon: item.icon,
+      weightGrams: item.weightGrams,
     });
     return acc;
-  }, {} as Record<string, { id: string, name: string, note?: string }[]>);
+  }, {} as Record<string, { id: string, name: string, note?: string, icon: any, weightGrams: number }[]>);
 
   return grouped;
 }
 
-// 4. GÜN BAZLI PLANLAYICI (Day-by-Day)
 export function generateDailyPlan(days: number, isSummit: boolean, lang: Language = 'tr') {
   const plan: { day: number; title: string; desc: string }[] = [];
-  
+
   const dict = {
     tr: {
       d1_title: 'Yaklaşım ve Kamp Kurulumu', d1_desc: 'Rotaya giriş, tempo ayarı ve baz kampın kurulması. Su kaynaklarının tespiti.',
@@ -132,7 +149,6 @@ export function generateDailyPlan(days: number, isSummit: boolean, lang: Languag
       summit_title: 'Summit Push!', summit_desc: 'Alpine start (midnight). Light pack, high energy, summit attempt and return to camp.',
       dlast_title: 'Descent & Leave No Trace', dlast_desc: 'Breaking down camp, descending while leaving no trace.'
     }
-    // FR ve ES için benzer sözlük buraya eklenebilir. Şimdilik TR ve EN dolduruldu, FR ve ES fallback olarak EN kullanabilir.
   };
 
   const t = dict[lang as keyof typeof dict] || dict['en'];
@@ -148,12 +164,11 @@ export function generateDailyPlan(days: number, isSummit: boolean, lang: Languag
     } else if (i === days) {
       plan.push({ day: i, title: t.dlast_title, desc: t.dlast_desc });
     } else {
-      // Ara günler. Eğer zirve faaliyeti ise, sondan bir önceki günü zirve günü yapalım.
       const isSummitDay = isSummit && i === days - 1;
-      plan.push({ 
-        day: i, 
-        title: isSummitDay ? t.summit_title : t.dmid_title, 
-        desc: isSummitDay ? t.summit_desc : t.dmid_desc 
+      plan.push({
+        day: i,
+        title: isSummitDay ? t.summit_title : t.dmid_title,
+        desc: isSummitDay ? t.summit_desc : t.dmid_desc
       });
     }
   }
