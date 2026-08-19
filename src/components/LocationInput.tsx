@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin } from 'lucide-react';
 
 interface LocationInputProps {
   onComplete: (location: string, date: string, coords?: { lat: number; lng: number }) => void;
@@ -81,8 +80,8 @@ export function LocationInput({ onComplete }: LocationInputProps) {
       className="min-h-screen flex flex-col justify-center px-6"
     >
       <div className="text-center space-y-3 mb-10">
-        <p className="text-ember-500 text-sm font-medium tracking-widest uppercase">
-          Nereye gidiyorsun?
+        <p className="text-ember-500 text-sm font-medium tracking-widest uppercase flex items-center justify-center gap-1.5">
+          <span>🏔️</span> Nereye gidiyorsun?
         </p>
         <h1 className="text-3xl font-bold text-white leading-tight">
           Konum ve tarihini
@@ -93,12 +92,15 @@ export function LocationInput({ onComplete }: LocationInputProps) {
 
       <div className="w-full max-w-sm mx-auto flex flex-col gap-4">
         <div className="relative w-full">
-          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-rock-400" />
+          {/* Dağ Emojisi Simgesi */}
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg select-none">
+            🏔️
+          </span>
           <input
             type="text"
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Dağ, zirve veya lokasyon ara (Örn: Ağrı Dağı, K2)..."
+            placeholder="Dağ, zirve veya lokasyon ara (Örn: Ağrı Dağı, Kaçkar)..."
             className="w-full pl-11 pr-4 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm text-white placeholder:text-rock-400 focus:outline-none focus:border-ember-500/50"
           />
           {searching && (
@@ -110,9 +112,10 @@ export function LocationInput({ onComplete }: LocationInputProps) {
                 <li
                   key={index}
                   onClick={() => handleSelectSuggestion(item)}
-                  className="px-4 py-3 hover:bg-white/5 cursor-pointer text-sm text-gray-200 border-b border-white/5 last:border-none"
+                  className="px-4 py-3 hover:bg-white/5 cursor-pointer text-sm text-gray-200 border-b border-white/5 last:border-none flex items-center gap-2"
                 >
-                  <span>{item.display_name}</span>
+                  <span>🏔️</span>
+                  <span className="truncate">{item.display_name}</span>
                 </li>
               ))}
             </ul>
@@ -145,9 +148,9 @@ export function LocationInput({ onComplete }: LocationInputProps) {
           whileTap={{ scale: 0.97 }}
           onClick={handleSubmit}
           disabled={!isValid}
-          className="w-full mt-4 px-4 py-3 rounded-2xl bg-ember-500 text-white font-semibold disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
+          className="w-full mt-4 px-4 py-3 rounded-2xl bg-ember-500 text-white font-semibold disabled:opacity-30 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2"
         >
-          Devam Et
+          Devam Et 🏔️
         </motion.button>
       </div>
     </motion.div>
