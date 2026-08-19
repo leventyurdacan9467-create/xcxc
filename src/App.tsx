@@ -11,8 +11,9 @@ import { ItemDetailSheet } from '@/components/ItemDetailSheet';
 import { Toast, type ToastData } from '@/components/Toast';
 import { LimitPaywallModal } from '@/components/LimitPaywallModal';
 import { PastExpeditionsModal } from '@/components/PastExpeditionsModal';
+import { OnboardingModal } from '@/components/OnboardingModal';
 import { useExpeditionArchive } from '@/hooks/useExpeditionArchive';
-import { initializeAdMob } from '@/utils/admob';
+import { initializeAdMob, showBottomBanner } from '@/utils/admob';
 import { useRemoteConfig } from '@/hooks/useRemoteConfig';
 import { generateEquipment, Language } from '@/utils/expeditionLogic';
 import { useLang } from '@/i18n';
@@ -46,13 +47,30 @@ function App() {
   
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const [toast, setToast] = useState<ToastData | null>(null);
   const toastId = useRef(0);
 
   useEffect(() => {
-    initializeAdMob();
+    // AdMob Başlatma & Banner Gösterme
+    const setupAds = async () => {
+      await initializeAdMob();
+      await showBottomBanner();
+    };
+    setupAds();
+
+    // Onboarding Kontrolü (İlk açılışta gösterilir)
+    const hasSeenOnboarding = localStorage.getItem('pathly_has_seen_onboarding');
+    if (!hasSeenOnboarding) {
+      setShowOnboarding(true);
+    }
   }, []);
+
+  const handleCloseOnboarding = () => {
+    localStorage.setItem('pathly_has_seen_onboarding', 'true');
+    setShowOnboarding(false);
+  };
 
   const showToast = useCallback((message: string) => {
     toastId.current += 1;
@@ -163,7 +181,7 @@ function App() {
   })();
 
   return (
-    <div className="relative mx-auto min-h-screen max-w-md overflow-hidden bg-forest-950">
+    <div className="relative mx-auto min-h-screen max-w-md overflow-hidden bg-forest-950 pb-16">
       <Toast toast={toast} onDismiss={() => setToast(null)} />
 
       {stage === 'location' && (
@@ -237,6 +255,11 @@ function App() {
         expeditions={expeditions}
         onClose={() => setShowArchiveModal(false)}
         onDelete={deleteExpedition}
+      />
+
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={handleCloseOnboarding}
       />
 
       <AnimatePresence>
