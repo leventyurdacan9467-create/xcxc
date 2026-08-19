@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.pathly.app',
+  appId: 'com.pathly.expedition',
   appName: 'Pathly',
   webDir: 'dist',
   server: {
