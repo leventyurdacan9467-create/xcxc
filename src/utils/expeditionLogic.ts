@@ -1,5 +1,3 @@
-// src/utils/expeditionLogic.ts
-
 import {
   HeartPulse,
   Droplet,
@@ -9,6 +7,12 @@ import {
   Pickaxe,
   BatteryCharging,
   Sun,
+  ShieldAlert,
+  Flame,
+  Shirt,
+  Compass,
+  Footprints,
+  Eye,
 } from 'lucide-react';
 
 export type Language = 'tr' | 'en' | 'fr' | 'es';
@@ -37,18 +41,20 @@ export interface EquipmentItem {
 }
 
 const CATEGORIES = {
-  CORE: { tr: 'Temel İhtiyaçlar', en: 'Core Essentials', fr: 'Essentiels de Base', es: 'Esenciales Básicos' },
+  CORE: { tr: 'Temel İhtiyaçlar & Sağlık', en: 'Core & Health', fr: 'Essentiels & Santé', es: 'Esenciales & Salud' },
   SAFETY: { tr: 'Güvenlik & Navigasyon', en: 'Safety & Navigation', fr: 'Sécurité et Navigation', es: 'Seguridad y Navegación' },
   CAMP: { tr: 'Kamp & Konaklama', en: 'Camp & Shelter', fr: 'Camp et Abri', es: 'Campamento y Refugio' },
+  CLOTHING: { tr: 'Giyim & Katmanlama', en: 'Apparel & Layers', fr: 'Vêtements et Couches', es: 'Ropa y Capas' },
   ELEC: { tr: 'Elektronik & Güç', en: 'Electronics & Power', fr: 'Électronique et Énergie', es: 'Electrónica y Energía' },
   TECH: { tr: 'Teknik Donanım', en: 'Technical Gear', fr: 'Matériel Technique', es: 'Equipo Técnico' }
 };
 
 const MASTER_EQUIPMENT: EquipmentItem[] = [
+  // --- TEMEL İHTİYAÇLAR & SAĞLIK ---
   {
     id: 'core-1',
     category: CATEGORIES.CORE,
-    name: { tr: 'İlk Yardım Kiti', en: 'First Aid Kit', fr: 'Trousse de Premiers Secours', es: 'Botiquín de Primeros Auxilios' },
+    name: { tr: 'İlk Yardım Kiti & Termal Battaniye', en: 'First Aid Kit & Thermal Blanket', fr: 'Trousse de Secours & Couverture', es: 'Botiquín & Manta Térmica' },
     icon: HeartPulse,
     weightGrams: 350,
     condition: () => true
@@ -56,16 +62,26 @@ const MASTER_EQUIPMENT: EquipmentItem[] = [
   {
     id: 'core-2',
     category: CATEGORIES.CORE,
-    name: { tr: 'Su Filtresi / Arıtma Tableti', en: 'Water Filter / Tablets', fr: 'Filtre à Eau', es: 'Filtro de Agua' },
+    name: { tr: 'Su Filtresi / Arıtma Tableti', en: 'Water Filter / Tablets', fr: 'Filtre à Eau / Pastilles', es: 'Filtro de Agua / Pastillas' },
     note: { tr: 'Doğal kaynaklar için hayati', en: 'Crucial for natural sources', fr: 'Crucial pour les sources naturelles', es: 'Crucial para fuentes naturales' },
     icon: Droplet,
     weightGrams: 150,
     condition: (p) => p.days > 1
   },
   {
+    id: 'core-3',
+    category: CATEGORIES.CORE,
+    name: { tr: 'Güneş Kremi & Dudak Koruyucu (SPF50+)', en: 'Sunscreen & Lip Balm', fr: 'Crème Solaire & Baume', es: 'Protector Solar y Labial' },
+    icon: Eye,
+    weightGrams: 100,
+    condition: () => true
+  },
+
+  // --- KAMP & KONAKLAMA ---
+  {
     id: 'camp-1',
     category: CATEGORIES.CAMP,
-    name: { tr: '4 Mevsim Çadır', en: '4-Season Tent', fr: 'Tente 4 Saisons', es: 'Tienda de 4 Estaciones' },
+    name: { tr: '4 Mevsim / Teknik Çadır', en: '4-Season / Technical Tent', fr: 'Tente 4 Saisons / Technique', es: 'Tienda 4 Estaciones' },
     icon: Tent,
     weightGrams: 2200,
     condition: (p) => p.days > 1
@@ -78,6 +94,60 @@ const MASTER_EQUIPMENT: EquipmentItem[] = [
     weightGrams: 1800,
     condition: (p) => p.days > 1
   },
+  {
+    id: 'camp-3',
+    category: CATEGORIES.CAMP,
+    name: { tr: 'Portatif Kamp Ocağı & Gaz Kartuşu', en: 'Camp Stove & Gas Canister', fr: 'Réchaud de Campement & Gaz', es: 'Hornillo de Campamento & Gas' },
+    icon: Flame,
+    weightGrams: 450,
+    condition: (p) => p.days > 1
+  },
+
+  // --- GİYİM & KATMANLAMA ---
+  {
+    id: 'cloth-1',
+    category: CATEGORIES.CLOTHING,
+    name: { tr: 'Termal İçlik Alt/Üst Set', en: 'Thermal Base Layer Set', fr: 'Sous-vêtements Thermiques', es: 'Conjunto Térmico Base' },
+    icon: Shirt,
+    weightGrams: 380,
+    condition: (p) => p.days > 1 || p.isWinter === true
+  },
+  {
+    id: 'cloth-2',
+    category: CATEGORIES.CLOTHING,
+    name: { tr: 'Su & Rüzgar Geçirmez Ceket (Gore-Tex)', en: 'Waterproof Hard Shell Jacket', fr: 'Veste Imperméable Hard Shell', es: 'Chaqueta Impermeable Cortavientos' },
+    icon: Shirt,
+    weightGrams: 520,
+    condition: () => true
+  },
+  {
+    id: 'cloth-3',
+    category: CATEGORIES.CLOTHING,
+    name: { tr: 'Kar Tozlukları (Gaiters)', en: 'Gaiters', fr: 'Guêtres de Randonnée', es: 'Polainas de Montaña' },
+    icon: Footprints,
+    weightGrams: 250,
+    condition: (p) => p.isWinter === true || p.isSummit
+  },
+
+  // --- GÜVENLİK & NAVİGASYON ---
+  {
+    id: 'safe-1',
+    category: CATEGORIES.SAFETY,
+    name: { tr: 'GPS Cihazı / Harita & Pusula', en: 'GPS Device / Map & Compass', fr: 'GPS / Carte & Boussole', es: 'Dispositivo GPS / Mapa y Brújula' },
+    icon: Compass,
+    weightGrams: 200,
+    condition: () => true
+  },
+  {
+    id: 'safe-2',
+    category: CATEGORIES.SAFETY,
+    name: { tr: 'UV Korumalı Dağcılık Gözlüğü / Kar Gözlüğü', en: 'Glacier / Snow Goggles', fr: 'Lunettes de Glacier', es: 'Gafas de Glaciar / Nieve' },
+    icon: ShieldAlert,
+    weightGrams: 140,
+    condition: (p) => p.isSummit || p.isWinter === true
+  },
+
+  // --- TEKNİK DONANIM ---
   {
     id: 'tech-1',
     category: CATEGORIES.TECH,
@@ -95,10 +165,12 @@ const MASTER_EQUIPMENT: EquipmentItem[] = [
     weightGrams: 1200,
     condition: (p) => p.isSummit || p.isWinter === true
   },
+
+  // --- ELEKTRONİK & GÜÇ ---
   {
     id: 'elec-1',
     category: CATEGORIES.ELEC,
-    name: { tr: '10.000 mAh Powerbank', en: '10.000 mAh Powerbank', fr: 'Batterie Externe 10.000 mAh', es: 'Batería Externa 10.000 mAh' },
+    name: { tr: '10.000 mAh Powerbank & Şarj Kablosu', en: '10.000 mAh Powerbank & Cable', fr: 'Batterie Externe 10.000 mAh', es: 'Batería Externa 10.000 mAh' },
     icon: BatteryCharging,
     weightGrams: 220,
     condition: (p) => p.days <= 2
@@ -118,12 +190,12 @@ export function generateEquipment(params: TripParams, lang: Language = 'tr') {
   const filtered = MASTER_EQUIPMENT.filter(item => item.condition(params));
 
   const grouped = filtered.reduce((acc, item) => {
-    const catName = item.category[lang];
+    const catName = item.category[lang] || item.category['tr'];
     if (!acc[catName]) acc[catName] = [];
     acc[catName].push({
       id: item.id,
-      name: item.name[lang],
-      note: item.note ? item.note[lang] : undefined,
+      name: item.name[lang] || item.name['tr'],
+      note: item.note ? (item.note[lang] || item.note['tr']) : undefined,
       icon: item.icon,
       weightGrams: item.weightGrams,
     });
