@@ -1,5 +1,3 @@
-// src/components/OnboardingModal.tsx
-
 import React, { useState } from 'react';
 import { Compass, Backpack, ShieldCheck, ChevronRight, Sparkles } from 'lucide-react';
 
@@ -77,7 +75,7 @@ export const OnboardingModal: React.FC<Props> = ({ isOpen, onClose }) => {
           </p>
         </div>
 
-        {/* Sayfa Noktaları (Dots) */}
+        {/* Sayfa Noktaları */}
         <div className="flex justify-center gap-1.5">
           {SLIDES.map((_, index) => (
             <span
@@ -111,43 +109,6 @@ export const OnboardingModal: React.FC<Props> = ({ isOpen, onClose }) => {
           )}
         </button>
       </div>
-    </div>
-  );
-};
-Entegrasyon: src/App.tsx İçinde Çağırma
-Rehberin sadece ilk açılışta otomatik görünmesi için src/App.tsx içerisine localStorage kontrolüyle ekleyebilirsin:
-
-TypeScript
-// src/App.tsx
-
-import React, { useState, useEffect } from 'react';
-import { OnboardingModal } from './components/OnboardingModal';
-
-export const App: React.FC = () => {
-  const [showOnboarding, setShowOnboarding] = useState(false);
-
-  useEffect(() => {
-    // Kullanıcı rehberi daha önce görmediyse göster
-    const hasSeen = localStorage.getItem('pathly_has_seen_onboarding');
-    if (!hasSeen) {
-      setShowOnboarding(true);
-    }
-  }, []);
-
-  const handleCloseOnboarding = () => {
-    localStorage.setItem('pathly_has_seen_onboarding', 'true');
-    setShowOnboarding(false);
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pb-16">
-      {/* Uygulama İçeriği */}
-
-      {/* Onboarding Kartı */}
-      <OnboardingModal
-        isOpen={showOnboarding}
-        onClose={handleCloseOnboarding}
-      />
     </div>
   );
 };
