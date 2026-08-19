@@ -247,3 +247,38 @@ export function generateDailyPlan(days: number, isSummit: boolean, lang: Languag
 
   return plan;
 }
+
+// --- TAHMİNİ AĞIRLIK HESAPLAMA YARDIMCILARI ---
+
+export function calculateTotalWeightGrams(items: { weightGrams?: number }[]): number {
+  return items.reduce((total, item) => total + (item.weightGrams || 0), 0);
+}
+
+export function formatWeightKg(grams: number): string {
+  return (grams / 1000).toFixed(1);
+}
+
+export function getWeightStatus(totalGrams: number) {
+  if (totalGrams > 15000) {
+    return {
+      label: 'Ağır Yük (~15kg+)',
+      color: 'text-red-400',
+      bgColor: 'bg-red-500/10 border-red-500/20',
+      desc: 'Yüksek irtifada bel ve diz yükünü azaltmak için yedek malzemeleri gözden geçirebilirsiniz.'
+    };
+  }
+  if (totalGrams > 9000) {
+    return {
+      label: 'Standart / Dengeli Yük',
+      color: 'text-amber-400',
+      bgColor: 'bg-amber-500/10 border-amber-500/20',
+      desc: 'Kamp ve dağcılık faaliyetleri için ortalama ve sürdürülebilir bir tahmini ağırlık.'
+    };
+  }
+  return {
+    label: 'Hafif Yük (Ultra-Light)',
+    color: 'text-emerald-400',
+    bgColor: 'bg-emerald-500/10 border-emerald-500/20',
+    desc: 'Tahmini çanta yükünüz oldukça ideal, hızlı ve konforlu bir yürüyüş temposu sağlar.'
+  };
+}
